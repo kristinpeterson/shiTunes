@@ -18,6 +18,4 @@ public class MusicPlayer {
 
     public void stop(Song song) {
     }
-
-
 }
