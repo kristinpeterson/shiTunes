@@ -56,6 +56,15 @@ public class Song {
     }
 
     /**
+     * Returns the Song file path
+     *
+     * @return the Song file path
+     */
+    public String getFilePath() {
+        return filePath;
+    }
+
+    /**
      * Returns the Song track
      *
      * @return the Song track

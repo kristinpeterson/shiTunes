@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="Gradle: mp3agic">
+  <library name="Gradle: jorbis-0.0.15">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/mp3agic.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jorbis-0.0.15.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
