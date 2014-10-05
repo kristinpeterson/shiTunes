@@ -8,7 +8,7 @@ import java.sql.Statement;
  */
 public class ShiBase {
 
-    public static String DB_NAME = "shiTunes";
+    public static String DB_NAME = "ShiBase";
 
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";

@@ -1,13 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="DataSourceManagerImpl" format="xml" hash="2769644366">
-    <data-source source="LOCAL" name="shiTunes" uuid="49f9cd82-22e1-4663-a918-a97bfef7be5a">
-      <driver-ref>derby.embedded</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>org.apache.derby.jdbc.EmbeddedDriver</jdbc-driver>
-      <jdbc-url>jdbc:derby:$PROJECT_DIR$/shiTunes;create=true</jdbc-url>
-      <libraries />
-    </data-source>
-  </component>
-</project>
+<project version="4" />
 

@@ -16,5 +16,5 @@
 .idea/workspace.xml
 
 # derby db files
-shiTunes/*
+ShiBase/*
 derby.log
