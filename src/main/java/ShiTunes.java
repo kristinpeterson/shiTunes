@@ -12,6 +12,39 @@ public class ShiTunes {
         System.out.println(music_dir + music_file);
         Song song = new Song(music_dir + music_file);
 
+        System.out.println("Testing play(song) : ");
+        MusicPlayer player = new MusicPlayer();
+        player.play(song);
+
+        try {
+            System.out.println("Sleeping 10 seconds : ");
+            Thread.sleep(10000);                 //1000 milliseconds is one second.
+        } catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+
+        System.out.println("Testng pause() : ");
+        player.pause();
+
+        try {
+            System.out.println("Sleeping 5 seconds : ");
+            Thread.sleep(5000);                 //1000 milliseconds is one second.
+        } catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+
+        System.out.println("Testng resume() : ");
+        player.resume();
+
+        try {
+            System.out.println("Sleeping 10 seconds : ");
+            Thread.sleep(10000);                 //1000 milliseconds is one second.
+        } catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+
+        System.out.println("Testing stop() : ");
+        player.stop();
 
         db.connect();
         System.out.println("testing isConnected() : " + db.isConnected());
