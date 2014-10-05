@@ -26,6 +26,8 @@ For a quick tutorial on git: [Try Git](https://try.github.io/levels/1/challenges
 ##Dependencies
 * [mp3agic v0.8.2](https://github.com/mpatric/mp3agic)
 * [BasicPlayer 3.0](http://www.javazoom.net/jlgui/api.html)
+* derby.jar
+* derbytools.jar
 
 BasicPlayer 3.0 Dependencies:
 
