@@ -18,7 +18,7 @@ public class ShiBase {
         try {
             Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
             //Get a connection
-            conn = DriverManager.getConnection(protocol + dbName );
+            conn = DriverManager.getConnection(protocol + dbName + ";create=true");
             // getConnection() can also have a second parameter, Properties,  to add username/password etc
         }
         catch (Exception except) {
