@@ -11,7 +11,7 @@ public class ShiBase {
     private static Connection conn = null;
     private static Statement stmt = null;
 
-    public void connect() {
+    public static void connect() {
         try {
             Class.forName("org.apache.derby.jdbc.ClientDriver").newInstance();
             //Get a connection
@@ -22,15 +22,15 @@ public class ShiBase {
         }
     }
 
-    public boolean isConnected() {
+    public static boolean isConnected() {
         return false;
     }
 
-    public void createDatabase(String databaseName) { }
+    public static void createDatabase(String databaseName) { }
 
-    public void dropDatabase(String databaseName) { }
+    public static void dropDatabase(String databaseName) { }
 
-    public void createTable(String tableName) {
+    public static void createTable(String tableName) {
         try
         {
             stmt = conn.createStatement();
@@ -52,7 +52,7 @@ public class ShiBase {
         }
     }
 
-    public void dropTable(String tableName) {
+    public static void dropTable(String tableName) {
         try
         {
             stmt = conn.createStatement();
@@ -67,7 +67,7 @@ public class ShiBase {
         }
     }
 
-    public void insertSong(Song song) {
+    public static void insertSong(Song song) {
         try
         {
             stmt = conn.createStatement();
@@ -76,10 +76,10 @@ public class ShiBase {
             String query = "INSERT INTO " + tableName +
                     " (filepath, track, artist, title, album, year, genre)" +
                     "VALUES ( "
-                    + "'" + Song.getFilePath() + "'," + "'" + Song.getTrack() + "',"
-                    + "'" + Song.getArtist() + "'," + "'" + Song.getTitle() + "',"
-                    + "'" + Song.getAlbum() + "'," + "'" + Song.getYear() + "',"
-                    + "'" + Song.getGenre() + "');";
+                    + "'" + song.getFilePath() + "'," + "'" + song.getTrack() + "',"
+                    + "'" + song.getArtist() + "'," + "'" + song.getTitle() + "',"
+                    + "'" + song.getAlbum() + "'," + "'" + song.getYear() + "',"
+                    + "'" + song.getGenre() + "');";
 
             stmt.execute(query);
             stmt.close();
@@ -90,7 +90,7 @@ public class ShiBase {
         }
     }
 
-    public void deleteSong(Song song) {
+    public static void deleteSong(Song song) {
         try
         {
             stmt = conn.createStatement();

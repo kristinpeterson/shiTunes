@@ -6,5 +6,6 @@
  */
 public class ShiTunes {
     public static void main(String[] args) {
+        ShiBase.connect();
     }
 }
