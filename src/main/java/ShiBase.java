@@ -1,21 +1,25 @@
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  *
  */
 public class ShiBase {
 
-    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver"; //these two fields no necessarily correct
-    private static String dbURL = "jdbc:mysql://localhost/Test";       //these two fields no necessarily correct
+    private static String protocol = "jdbc:derby:";       //these two fields no necessarily correct
+    private static String dbName = "shiTunes";
     private static String tableName = "musicDatabase";
     private static Connection conn = null;
     private static Statement stmt = null;
 
     public static void connect() {
         try {
-            Class.forName("org.apache.derby.jdbc.ClientDriver").newInstance();
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
             //Get a connection
-            conn = DriverManager.getConnection(dbURL);
+            conn = DriverManager.getConnection(protocol + dbName );
+            // getConnection() can also have a second parameter, Properties,  to add username/password etc
         }
         catch (Exception except) {
             except.printStackTrace();
