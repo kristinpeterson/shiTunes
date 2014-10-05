@@ -33,7 +33,7 @@ public class ShiBase {
         }
         catch (Exception except) {
             except.printStackTrace();
-            // If connection
+            // If database does not exist; create database
             createDatabase();
         }
     }
@@ -49,6 +49,7 @@ public class ShiBase {
             conn = DriverManager.getConnection(PROTOCOL + DB_NAME + CREATE);
             // getConnection() can also have a second parameter, Properties,  to add username/password etc
             System.out.println(DB_NAME + " CREATED!");
+            connected = true;
             return true;
         } catch (Exception except) {
             except.printStackTrace();

@@ -14,3 +14,7 @@
 
 # intellij
 .idea/workspace.xml
+
+# derby db files
+shiTunes/*
+derby.log
