@@ -137,24 +137,22 @@ public class ShiBase {
         }
         return true;
     }
-    public Object[][] getAll()
+    /*public Object[][] getAll()
     {
-        ResultSet fullLibrary= new ResultSet();
+        Object[][] results = new Object[][];
         try
         {
             stmt = conn.createStatement();
-            String query ="SELECT * FROM " + TABLE_NAME " ORDER BY artist";
+            String query ="SELECT * FROM " + TABLE_NAME + " ORDER BY artist";
             stmt.execute(query);
-            fullLibrary = stmt.getResultSet();
-            fullLibrary.
             stmt.close();
         }
         catch (SQLException sqlExcept)
         {
             sqlExcept.printStackTrace();
-            return false;
+            return results;
         }
-        return true;
-    }
+        return results;
+    }*/
 
 }
