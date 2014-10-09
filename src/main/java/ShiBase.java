@@ -1,7 +1,4 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 /**
  *
@@ -131,6 +128,25 @@ public class ShiBase {
                     "filePath= '" + song.getFilePath() + "'";
 
             stmt.execute(query);
+            stmt.close();
+        }
+        catch (SQLException sqlExcept)
+        {
+            sqlExcept.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+    public Object[][] getAll()
+    {
+        ResultSet fullLibrary= new ResultSet();
+        try
+        {
+            stmt = conn.createStatement();
+            String query ="SELECT * FROM " + TABLE_NAME " ORDER BY artist";
+            stmt.execute(query);
+            fullLibrary = stmt.getResultSet();
+            fullLibrary.
             stmt.close();
         }
         catch (SQLException sqlExcept)
