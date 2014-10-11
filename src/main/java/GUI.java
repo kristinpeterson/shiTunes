@@ -11,10 +11,17 @@ import javax.swing.table.*;
 import java.awt.EventQueue;
 import java.awt.Dimension;
 
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+
 /**
  * Created by michael on 10/3/2014.
  */
-public class GUI {
+public class GUI extends JFrame{
     //private JTable libraryTable;
     //private JSlider slider1;
     private JButton playButton;
@@ -23,6 +30,13 @@ public class GUI {
     private JTable libTable;
     private JPanel panel1;
     private JSlider slider1;
+    //private JMenu menu1;
+    //private JMenuItem menuItem1, menuItem2;
+
+    //menu1 = new JMenu("File");
+    private JMenuBar menuBar = new JMenuBar();
+
+
     private Object[] columnNames = {"Title", "Artist", "Album", "Genre", "Length", "Year"};
     private Object[][] dummyData = {
             {"Champions Of Red Wine", "The New Pornographers", "Brill Bruisers", "Alternative", "3:41", "2014"},
@@ -46,6 +60,8 @@ public class GUI {
         shiTunesFrame.setSize(600, 400);
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        shiTunesFrame.setJMenuBar(menuBar);
+        menuBar.add(createFileMenu());
 
 
         JPanel panel1 = new JPanel();
@@ -89,6 +105,21 @@ public class GUI {
     }
     private void createUIComponents() {
         // TODO: place custom component creation code here
+    }
+
+    public JMenu createFileMenu() {
+        JMenu menu = new JMenu("File");
+        JMenuItem exitItem = new JMenuItem("Exit");
+        ActionListener listener = new ExitItemListener();
+        exitItem.addActionListener(listener);
+        menu.add(exitItem);
+        return menu;
+    }
+
+    class ExitItemListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            System.exit(0);
+        }
     }
 
     public static void main (String []args)
