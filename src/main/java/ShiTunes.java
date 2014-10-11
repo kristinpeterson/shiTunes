@@ -3,6 +3,9 @@
  * This will be the main class of the shiTunes application
  * handling initialization, etc
  *
+ * As of right now this class has a ton of test code in it that
+ * will need to be removed.
+ *
  */
 public class ShiTunes {
     public static void main(String[] args) {
@@ -50,6 +53,17 @@ public class ShiTunes {
         System.out.println("testing isConnected() : " + db.isConnected());
         System.out.println("testing createTable() : " + db.createTable());
         System.out.println("testing insertSong(song) : " + db.insertSong(song));
+        Object[][] allSongs = db.getAllSongs();
+        System.out.println("testing getAllSongs() : " + allSongs.toString());
+        System.out.println("ALL SONGS IN DB :");
+        System.out.println();
+        for(int i = 0; i < allSongs.length; i++) {
+            for(int j = 0; j < allSongs[i].length; j++) {
+                System.out.print(allSongs[i][j].toString() + " - ");
+            }
+            System.out.println();
+        }
+        System.out.println();
         System.out.println("testing deleteSong(song) : " + db.deleteSong(song));
         System.out.println("testing dropTable() : " + db.dropTable());
 

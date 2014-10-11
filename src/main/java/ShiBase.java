@@ -60,7 +60,6 @@ public class ShiBase {
             stmt = conn.createStatement();
             String query ="CREATE TABLE " + TABLE_NAME +
                     " (filePath VARCHAR(200) NOT NULL, " +
-                    "track VARCHAR(150), " +
                     "artist VARCHAR(100), " +
                     "title VARCHAR(150), " +
                     "album VARCHAR(150), " +
@@ -102,9 +101,9 @@ public class ShiBase {
 
             //Static errors here. Either make Song object or make Song methods static.
             String query = "INSERT INTO " + TABLE_NAME +
-                    " (filepath, track, artist, title, album, year_released, genre)" +
+                    " (filepath, artist, title, album, year_released, genre)" +
                     "VALUES ( "
-                    + "'" + song.getFilePath() + "'," + "'" + song.getTrack() + "',"
+                    + "'" + song.getFilePath() + "',"
                     + "'" + song.getArtist() + "'," + "'" + song.getTitle() + "',"
                     + "'" + song.getAlbum() + "'," + "'" + song.getYear() + "',"
                     + "'" + song.getGenre() + "')";
@@ -137,22 +136,56 @@ public class ShiBase {
         }
         return true;
     }
-    /*public Object[][] getAll()
+
+    public Object[][] getAllSongs()
     {
-        Object[][] results = new Object[][];
+        Object[][] allSongs;
+        int rowCount = 0;
+        int index = 0;
+        String filePath;
+        String artist;
+        String title;
+        String album;
+        String year_released;
+        String genre;
+
         try
         {
             stmt = conn.createStatement();
-            String query ="SELECT * FROM " + TABLE_NAME + " ORDER BY artist";
-            stmt.execute(query);
+
+            // Get record count
+            String rowCountQuery = "SELECT count(*) AS rowcount FROM " + TABLE_NAME;
+            ResultSet rowCountRS = stmt.executeQuery(rowCountQuery);
+            rowCountRS.next();
+            rowCount = rowCountRS.getInt("rowcount");
+
+            // Initialize multidimensional array of size [rowCount][6]
+            // 6 being the column count
+            allSongs = new Object[rowCount][6];
+
+            // Get all records
+            String allSongsQuery = "SELECT * FROM " + TABLE_NAME + " ORDER BY artist";
+            ResultSet allSongsRS = stmt.executeQuery(allSongsQuery);
+
+            while(allSongsRS.next()) {
+                filePath = allSongsRS.getString("filePath");
+                artist = allSongsRS.getString("artist");
+                title = allSongsRS.getString("title");
+                album = allSongsRS.getString("album");
+                year_released = allSongsRS.getString("year_released");
+                genre = allSongsRS.getString("genre");
+                Object[] song = {artist, title, album, year_released, genre, filePath};
+                allSongs[index] = song;
+                index++;
+            }
             stmt.close();
         }
         catch (SQLException sqlExcept)
         {
             sqlExcept.printStackTrace();
-            return results;
+            return new Object[0][0];
         }
-        return results;
-    }*/
+        return allSongs;
+    }
 
 }
