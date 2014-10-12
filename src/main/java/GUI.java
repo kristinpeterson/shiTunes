@@ -90,7 +90,7 @@ public class GUI extends JFrame{
         panel1 = new JPanel();
         //libTable = new JTable(db.getAllSongs(), ShiBase.COLUMNS);
         //new DefaultTableModel(db.getAllSongs(), ShiBase.COLUMNS)
-        libTable = new JTable(new DefaultTableModel(db.getAllSongs(), ShiBase.COLUMNS));
+        libTable = new JTable(new DefaultTableModel(db.getAllSongs(), ShiBase.MUSIC_COLUMNS));
 
         JScrollPane scrollPane = new JScrollPane(libTable);
         libTable.setPreferredScrollableViewportSize(new Dimension(500, 200));

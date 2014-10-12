@@ -10,10 +10,20 @@ import java.io.File;
  */
 public class MusicPlayer {
 
-    private BasicPlayer player;
+    /**
+     * Indicates whether the player is paused
+     */
     public boolean paused = false;
+    /**
+     * Indicates whether the player is playing
+     */
     public boolean playing = false;
+    /**
+     * Indicates whether the player is stopped
+     */
     public boolean stopped = true;
+
+    private BasicPlayer player;
 
     /**
      * MusicPlayer constructor, instantiates the persistent BasicPlayer object

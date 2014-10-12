@@ -8,9 +8,18 @@ import java.sql.*;
  */
 public class ShiBase {
 
+    /**
+     * The database name
+     */
     public static String DB_NAME = "ShiBase";
+    /**
+     * The music table name
+     */
     public static final String MUSIC_TABLE = "MUSIC";
-    public static final String[] COLUMNS =  {"Artist", "Title", "Album", "Year", "Genre", "Filename"};
+    /**
+     * The columns of the music table
+     */
+    public static final String[] MUSIC_COLUMNS =  {"Artist", "Title", "Album", "Year", "Genre", "Filename"};
 
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
@@ -39,7 +48,6 @@ public class ShiBase {
             Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
             //Get a connection
             conn = DriverManager.getConnection(PROTOCOL + DB_NAME);
-            System.out.println(DB_NAME + " CONNECTED!");
             // getConnection() can also have a second parameter, Properties,  to add username/password etc
             connected = true;
         }
@@ -113,7 +121,7 @@ public class ShiBase {
      *
      * @return true if the table was dropped successfully
      */
-    public boolean dropMusicTable(String tableName) {
+    public boolean dropTable(String tableName) {
         try
         {
             stmt = conn.createStatement();
@@ -246,9 +254,8 @@ public class ShiBase {
             rowCountRS.next();
             rowCount = rowCountRS.getInt("rowcount");
 
-            // Initialize multidimensional array of size [rowCount][6]
-            // 6 being the column count
-            allSongs = new Object[rowCount][6];
+            // Initialize multidimensional array large enough to hold all songs
+            allSongs = new Object[rowCount][MUSIC_COLUMNS.length];
 
             // Get all records
             String allSongsQuery = "SELECT * FROM " + MUSIC_TABLE + " ORDER BY artist";
