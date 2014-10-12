@@ -86,7 +86,7 @@ public class GUI extends JFrame{
             }
         });
 
-        // Add play/pause toggle and stop buttons to panel1
+        // Add buttons to panel1
         try {
             // Initialize resources
             playResource = ImageIO.read(new File(RESOURCES_DIR + PLAY_RESOURCE));
@@ -107,9 +107,7 @@ public class GUI extends JFrame{
             previousButton = new JButton(previousIcon);
             nextButton = new JButton(nextIcon);
 
-            // Set action listener for play button to play selectedSong if player.stopped,
-            // pause the currently playing song if player.playing,
-            // resume the previously paused song if player.paused
+            // Set action listener for play/pause toggle button
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if(getSelectedSong() != null && !getSelectedSong().isEmpty()) {
@@ -127,12 +125,12 @@ public class GUI extends JFrame{
                             player.play(getSelectedSong());
                         }
                     } else {
-                        // do nothing
+                        // do nothing, there is no selected song
                     }
                 }
             });
 
-            // Set action listener for stop button to pause currently playing song
+            // Set action listener for stop button
             stopButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     player.stop();
