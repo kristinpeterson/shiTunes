@@ -18,6 +18,19 @@ import java.io.IOException;
  */
 public class GUI extends JFrame{
 
+    private MusicPlayer player;
+    private ShiBase db;
+    private int selectedSongIndex;
+
+    // GUI Frame and contents
+    private JFrame shiTunesFrame;
+    private JPanel mainPanel;
+    private JMenuBar menuBar;
+    private JPanel buttonPanel;
+    private JPanel libraryPanel;
+    private JTable libTable;
+
+    // UI Components
     private static BufferedImage playResource;
     private static BufferedImage pauseResource;
     private static BufferedImage stopResource;
@@ -35,18 +48,9 @@ public class GUI extends JFrame{
     private JButton previousButton;
     private JButton nextButton;
 
-    private JFrame shiTunesFrame;
-    private JTable libTable;
-    private JPanel panel1;
-    private JMenuBar menuBar;
+    // File Chooser
     private JFileChooser chooser = new JFileChooser();
-    private static FileNameExtensionFilter filter = new FileNameExtensionFilter(
-        "MP3 Files", "mp3");
-
-    private MusicPlayer player;
-    private ShiBase db;
-
-    private int selectedSongIndex;
+    private static FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
 
     /**
      * The GUI default constructor
@@ -73,23 +77,39 @@ public class GUI extends JFrame{
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Set and add menu bar
+        // Panel initialization
+        mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        buttonPanel = new JPanel();
+        libraryPanel = new JPanel(new GridLayout(1,1));
+
+        // Menu bar initialization
         menuBar = new JMenuBar();
-        shiTunesFrame.setJMenuBar(menuBar);
         menuBar.add(createFileMenu());
 
-        // Build library table as ScrollPane and add to panel1
-        panel1 = new JPanel();
-        //libTable = new JTable(db.getAllSongs(), ShiBase.COLUMNS);
-        //new DefaultTableModel(db.getAllSongs(), ShiBase.COLUMNS)
-        libTable = new JTable(new DefaultTableModel(db.getAllSongs(), ShiBase.MUSIC_COLUMNS));
+        // Build library table
+        // instance library table model - this prevents individual cells from being editable
+        DefaultTableModel tableModel = new DefaultTableModel(db.getAllSongs(), ShiBase.MUSIC_COLUMNS) {
 
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                //all cells false
+                return false;
+            }
+        };
+
+        // Instantiate library table based off table model
+        libTable = new JTable(tableModel);
+
+        // Instantiate scroll pane for library
         JScrollPane scrollPane = new JScrollPane(libTable);
         libTable.setPreferredScrollableViewportSize(new Dimension(500, 200));
         libTable.setFillsViewportHeight(true);
-        panel1.add(scrollPane);
 
-        // Setup Library table
+        // Add scroll pane (library table) to library panel
+        libraryPanel.add(scrollPane);
+
+        // Setup Library table listener
         libTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
             public void valueChanged(ListSelectionEvent event) {
                 // Store selected song row index for use in skipping and getting selected song
@@ -97,8 +117,16 @@ public class GUI extends JFrame{
             }
         });
 
+        // Add UI components (buttons)
         addUIComponents();
-        shiTunesFrame.setContentPane(panel1);
+
+        // Build main panel
+        mainPanel.add(buttonPanel);
+        mainPanel.add(libraryPanel);
+
+        // Add all GUI components to shiTunes application frame
+        shiTunesFrame.setJMenuBar(menuBar);
+        shiTunesFrame.setContentPane(mainPanel);
         shiTunesFrame.pack();
         shiTunesFrame.setLocationByPlatform(true);
     }
@@ -136,6 +164,12 @@ public class GUI extends JFrame{
             stopButton = new JButton(stopIcon);
             previousButton = new JButton(previousIcon);
             nextButton = new JButton(nextIcon);
+
+            // Set preferred button size
+            togglePlayButton.setPreferredSize(new Dimension(40, 40));
+            stopButton.setPreferredSize(new Dimension(40, 40));
+            previousButton.setPreferredSize(new Dimension(40, 40));
+            nextButton.setPreferredSize(new Dimension(40, 40));
 
             // Set action listener for play/pause toggle button
             togglePlayButton.addActionListener(new ActionListener() {
@@ -200,11 +234,13 @@ public class GUI extends JFrame{
                 }
             });
 
-            // Add play/pause toggle and stop buttons to panel1
-            panel1.add(previousButton);
-            panel1.add(togglePlayButton);
-            panel1.add(stopButton);
-            panel1.add(nextButton);
+            // Add buttons to buttonPanel
+            buttonPanel.add(previousButton);
+            buttonPanel.add(togglePlayButton);
+            buttonPanel.add(stopButton);
+            buttonPanel.add(nextButton);
+
+            buttonPanel.setMaximumSize(new Dimension(1080, 40));
         } catch (IOException e) {
             // IOException thrown while reading resource files
             e.printStackTrace();
