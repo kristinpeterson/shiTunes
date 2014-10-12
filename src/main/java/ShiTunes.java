@@ -9,6 +9,14 @@
  */
 public class ShiTunes {
     public static void main(String[] args) {
+        // Init GUI
+        GUI gui = new GUI();
+
+        // Display GUI once initialized
+        gui.displayGUI();
+
+        /* Test code [remove / comment this out in production]
+        // Init DB
         ShiBase db = new ShiBase();
         String music_dir = System.getProperty("user.dir") + "/mp3/";
         String music_file = "test.mp3";
@@ -66,6 +74,6 @@ public class ShiTunes {
         System.out.println();
         System.out.println("testing deleteSong(song) : " + db.deleteSong(song));
         System.out.println("testing dropTable() : " + db.dropTable());
-
+        */
     }
 }

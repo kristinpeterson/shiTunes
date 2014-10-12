@@ -46,8 +46,6 @@ public class Song {
                 this.year = id3v2Tag.getYear();
                 this.genre = id3v2Tag.getGenreDescription();
             }
-            System.out.println("Successfully created Song!");
-            System.out.println("Song title = " + this.title);
         } catch (IOException ioe) {
             System.out.println("IOException occurred");
         } catch (Exception e) {

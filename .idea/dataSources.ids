@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="dataSourceStorage">
+  <data-source source="LOCAL" name="ShiBase" uuid="e2d8cfe9-5609-494f-b345-87235888c657">
+    <database-info product="Apache Derby" version="10.10.1.1 - (1458268)" jdbc-version="4.1" driver-name="Apache Derby Embedded JDBC Driver" driver-version="10.10.1.1 - (1458268)">
+      <identifier-quote-string>&quot;</identifier-quote-string>
+    </database-info>
+    <case-sensitivity plain-identifiers="upper" quoted-identifiers="exact"/>
+  </data-source>
+</component>

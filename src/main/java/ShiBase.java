@@ -6,17 +6,19 @@ import java.sql.*;
 public class ShiBase {
 
     public static String DB_NAME = "ShiBase";
+    public static final String TABLE_NAME = "music";
+    public static final String[] COLUMNS =  {"Artist", "Title", "Album", "Year", "Genre", "Filename"};
 
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
-    private static final String TABLE_NAME = "music";
     private Connection conn;
     private Statement stmt;
     private boolean connected;
 
 
     public ShiBase() {
-        conn = null;
+        connect();
+        createTable();
     }
 
     public void connect() {
@@ -29,7 +31,6 @@ public class ShiBase {
             connected = true;
         }
         catch (Exception except) {
-            except.printStackTrace();
             // If database does not exist; create database
             createDatabase();
         }
@@ -45,7 +46,6 @@ public class ShiBase {
             //Get a connection
             conn = DriverManager.getConnection(PROTOCOL + DB_NAME + CREATE);
             // getConnection() can also have a second parameter, Properties,  to add username/password etc
-            System.out.println(DB_NAME + " CREATED!");
             connected = true;
             return true;
         } catch (Exception except) {
@@ -57,17 +57,20 @@ public class ShiBase {
     public boolean createTable() {
         try
         {
-            stmt = conn.createStatement();
-            String query ="CREATE TABLE " + TABLE_NAME +
-                    " (filePath VARCHAR(200) NOT NULL, " +
-                    "artist VARCHAR(100), " +
-                    "title VARCHAR(150), " +
-                    "album VARCHAR(150), " +
-                    "year_released VARCHAR(4), " +
-                    "genre VARCHAR(20))";
-
-            stmt.execute(query);
-            stmt.close();
+            DatabaseMetaData dbmd = conn.getMetaData();
+            ResultSet rs = dbmd.getTables(null, "APP", TABLE_NAME, null);
+            if(!rs.next()) {
+                String query = "CREATE TABLE " + TABLE_NAME +
+                        " (filePath VARCHAR(200) NOT NULL, " +
+                        "artist VARCHAR(100), " +
+                        "title VARCHAR(150), " +
+                        "album VARCHAR(150), " +
+                        "year_released VARCHAR(4), " +
+                        "genre VARCHAR(20))";
+                stmt = conn.createStatement();
+                stmt.execute(query);
+                stmt.close();
+            }
         }
         catch (SQLException sqlExcept)
         {
@@ -95,6 +98,9 @@ public class ShiBase {
     }
 
     public boolean insertSong(Song song) {
+        if(songExists(song.getFilePath())){
+            return false;
+        }
         try
         {
             stmt = conn.createStatement();
@@ -119,22 +125,47 @@ public class ShiBase {
         return true;
     }
 
-    public boolean deleteSong(Song song) {
+    public boolean songExists(String filepath) {
+        int rowCount = 0;
+
         try
         {
             stmt = conn.createStatement();
-            String query ="DELETE FROM " + TABLE_NAME + " WHERE " +
-                    "filePath= '" + song.getFilePath() + "'";
 
-            stmt.execute(query);
+            String query = "SELECT count(*) AS rowcount FROM " + TABLE_NAME +
+                    " WHERE filepath='" + filepath + "'";
+            ResultSet resultSet = stmt.executeQuery(query);
+            resultSet.next();
+            rowCount = resultSet.getInt("rowcount");
             stmt.close();
-        }
-        catch (SQLException sqlExcept)
-        {
+            if(rowCount != 0) {
+                // song exists, return true
+                return true;
+            }
+        } catch (SQLException sqlExcept) {
             sqlExcept.printStackTrace();
             return false;
         }
-        return true;
+        // song doesn't exist
+        return false;
+    }
+
+    public boolean deleteSong(Song song) {
+        if(songExists(song.getFilePath())) {
+            try {
+                stmt = conn.createStatement();
+                String query = "DELETE FROM " + TABLE_NAME + " WHERE " +
+                        "filePath= '" + song.getFilePath() + "'";
+
+                stmt.execute(query);
+                stmt.close();
+                return true;
+            } catch (SQLException sqlExcept) {
+                sqlExcept.printStackTrace();
+                return false;
+            }
+        }
+        return false;
     }
 
     public Object[][] getAllSongs()
@@ -188,4 +219,11 @@ public class ShiBase {
         return allSongs;
     }
 
+    public void close() {
+        try {
+            conn.close();
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
+    }
 }

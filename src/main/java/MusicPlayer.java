@@ -9,7 +9,10 @@ import java.io.File;
  */
 public class MusicPlayer {
 
-    BasicPlayer player;
+    private BasicPlayer player;
+    public boolean paused = false;
+    public boolean playing = false;
+    public boolean stopped = true;
 
     /**
      * MusicPlayer constructor, instantiates the persistent BasicPlayer object
@@ -22,12 +25,15 @@ public class MusicPlayer {
     /**
      * Plays the given song
      *
-     * @param song the song to play
+     * @param song the file path of the song to play
      */
-    public void play(Song song) {
+    public void play(String song) {
         try {
-            player.open(new File(song.getFilePath()));
+            player.open(new File(song));
             player.play();
+            playing = true;
+            paused = false;
+            stopped = false;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -40,6 +46,9 @@ public class MusicPlayer {
     public void resume() {
         try {
             player.resume();
+            playing = true;
+            paused = false;
+            stopped = false;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -52,6 +61,9 @@ public class MusicPlayer {
     public void pause() {
         try {
             player.pause();
+            playing = false;
+            paused = true;
+            stopped = false;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -64,7 +76,9 @@ public class MusicPlayer {
     public void stop() {
         try {
             player.stop();
-
+            stopped = true;
+            playing = false;
+            paused = false;
         } catch (Exception e) {
             e.printStackTrace();
         }

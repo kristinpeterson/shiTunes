@@ -29,6 +29,8 @@
     <orderEntry type="library" exported="" name="Gradle: mp3spi1.9.5" level="project" />
     <orderEntry type="library" exported="" name="Gradle: tritonus_share" level="project" />
     <orderEntry type="library" exported="" name="Gradle: vorbisspi1.0.2" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: derby" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: derbytools" level="project" />
   </component>
 </module>
 
