@@ -2,6 +2,8 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -46,6 +48,9 @@ public class GUI extends JFrame{
     private JTable libTable;
     private JPanel panel1;
     private JMenuBar menuBar;
+    private JFileChooser chooser = new JFileChooser();
+    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+        "MP3 Files", "mp3");
 
     private int selectedSongIndex;
 
@@ -72,7 +77,10 @@ public class GUI extends JFrame{
 
         // Build library table as ScrollPane and add to panel1
         panel1 = new JPanel();
-        libTable = new JTable(db.getAllSongs(), ShiBase.COLUMNS);
+        //libTable = new JTable(db.getAllSongs(), ShiBase.COLUMNS);
+        //new DefaultTableModel(db.getAllSongs(), ShiBase.COLUMNS)
+        libTable = new JTable(new DefaultTableModel(db.getAllSongs(), ShiBase.COLUMNS));
+
         JScrollPane scrollPane = new JScrollPane(libTable);
         libTable.setPreferredScrollableViewportSize(new Dimension(500, 200));
         libTable.setFillsViewportHeight(true);
@@ -194,23 +202,73 @@ public class GUI extends JFrame{
         // TODO: place custom component creation code here
     }
 
-    public JMenu createFileMenu() {
-        JMenu menu = new JMenu("File");
-        JMenuItem exitItem = new JMenuItem("Exit");
-        ActionListener listener = new ExitItemListener();
-        exitItem.addActionListener(listener);
-        menu.add(exitItem);
-        return menu;
-    }
-
     private String getSelectedSong() {
         return libTable.getValueAt(selectedSongIndex, 5).toString();
+    }
+
+    public JMenu createFileMenu() {
+        JMenu menu = new JMenu("File");
+        JMenuItem addItem = new JMenuItem("Add Song");
+        JMenuItem deleteItem = new JMenuItem("Delete Song");
+        JMenuItem exitItem = new JMenuItem("Exit");
+
+        ActionListener addListener = new AddItemListener();
+        ActionListener deleteListener = new DeleteItemListener();
+        ActionListener exitListener = new ExitItemListener();
+
+        addItem.addActionListener(addListener);
+        deleteItem.addActionListener(deleteListener);
+        exitItem.addActionListener(exitListener);
+
+        menu.add(addItem);
+        menu.add(deleteItem);
+        menu.add(exitItem);
+        return menu;
     }
 
     class ExitItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             db.close();
             System.exit(0);
+        }
+    }
+
+    class AddItemListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            chooser.setFileFilter(filter);  //filters for mp3 files only
+
+            //file chooser menu
+            if (chooser.showOpenDialog(shiTunesFrame) == JFileChooser.APPROVE_OPTION) {
+
+                File selectedFile = chooser.getSelectedFile();
+                Song selectedSong = new Song(selectedFile.getPath());
+                db.insertSong(selectedSong);    //adds selected song to database
+
+                //Add row to JTable
+                /*
+                    TODO: PREVENT DUPLICATE ENTRIES (not sure if this is a hard requirement)
+                 */
+
+                DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+
+                model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
+                        selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+            }
+        }
+    }
+
+    class DeleteItemListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+
+            //Delete row from JTable
+            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+            int row = libTable.getSelectedRow();    //row number to be deleted
+            model.removeRow(row);
+
+            //Delete song from database by using filepath as an identifier
+            String selected = model.getValueAt(row, 6).toString();  //NOTE: produces ArrayIndexOutofBoundsException,
+                                                                    //but functions just fine.
+            db.deleteSong(selected);    //NOTE: I added an overloaded method deleteSong to ShiBase
         }
     }
 
@@ -227,6 +285,11 @@ public class GUI extends JFrame{
         db.insertSong(song);
     }
 
+    /* TODO: For testing purposes. Delete this in production code */
+    public static void main(String[] args) {
+        GUI testing = new GUI();
+        testing.displayGUI();
+    }
 }
 
 

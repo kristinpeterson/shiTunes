@@ -168,6 +168,22 @@ public class ShiBase {
         return false;
     }
 
+    //overloaded method to assist GUI in song deletion
+    public boolean deleteSong(String filePath) {
+        try {
+            stmt = conn.createStatement();
+            String query = "DELETE FROM " + TABLE_NAME + " WHERE " +
+                    "filePath= '" + filePath + "'";
+
+            stmt.execute(query);
+            stmt.close();
+            return true;
+        } catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+            return false;
+        }
+    }
+
     public Object[][] getAllSongs()
     {
         Object[][] allSongs;
