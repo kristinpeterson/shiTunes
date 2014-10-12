@@ -12,7 +12,9 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by michael on 10/3/2014.
+ * The GUI class builds the shiTunes Graphical User Interface
+ *
+ * @author shiTunes inc.
  */
 public class GUI extends JFrame{
 
@@ -49,15 +51,24 @@ public class GUI extends JFrame{
     private JPanel panel1;
     private JMenuBar menuBar;
     private JFileChooser chooser = new JFileChooser();
-    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+    private static FileNameExtensionFilter filter = new FileNameExtensionFilter(
         "MP3 Files", "mp3");
 
     private int selectedSongIndex;
 
+    /**
+     * The GUI default constructor
+     * <p>
+     * Initializes and connects to the database (ShiBase),
+     * Builds the shiBase GUI, including Music Library table,
+     * Main Menu and buttons (previous, play/pause, stop, next)
+     *
+     */
     public GUI() {
         // Initialize Database
         db = new ShiBase();
         db.connect();
+        // TODO: REMOVE loadDummyData() IN PRODUCTION CODE? (or keep it for demo)
         loadDummyData();
 
         // Initialize Music Player
@@ -65,7 +76,7 @@ public class GUI extends JFrame{
 
         // GUI initialization
         shiTunesFrame = new JFrame();
-        shiTunesFrame.setTitle("ShiTunes");
+        shiTunesFrame.setTitle("shiTunes");
         shiTunesFrame.setSize(600, 400);
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -94,7 +105,26 @@ public class GUI extends JFrame{
             }
         });
 
-        // Add buttons to panel1
+        addUIComponents();
+        shiTunesFrame.setContentPane(panel1);
+        shiTunesFrame.pack();
+        shiTunesFrame.setLocationByPlatform(true);
+    }
+
+    /**
+     * Displays the shiTunes GUI
+     *
+     */
+    public void displayGUI()
+    {
+        shiTunesFrame.setVisible(true);
+    }
+
+    /**
+     * Adds UI Components to shiTunes GUI Panel
+     *
+     */
+    private void addUIComponents() {
         try {
             // Initialize resources
             playResource = ImageIO.read(new File(RESOURCES_DIR + PLAY_RESOURCE));
@@ -187,25 +217,22 @@ public class GUI extends JFrame{
             // IOException thrown while reading resource files
             e.printStackTrace();
         }
-
-        shiTunesFrame.setContentPane(panel1);
-        shiTunesFrame.pack();
-        shiTunesFrame.setLocationByPlatform(true);
     }
 
-    public void displayGUI()
-    {
-        shiTunesFrame.setVisible(true);
-    }
-
-    private void createUIComponents() {
-        // TODO: place custom component creation code here
-    }
-
+    /**
+     * Gets the currently selected song filename
+     *
+     * @return the filename for the currently selected song
+     */
     private String getSelectedSong() {
         return libTable.getValueAt(selectedSongIndex, 5).toString();
     }
 
+    /**
+     * Creates shiTunes file menu
+     *
+     * @return the shiTunes file menu
+     */
     public JMenu createFileMenu() {
         JMenu menu = new JMenu("File");
         JMenuItem addItem = new JMenuItem("Add Song");
@@ -226,6 +253,13 @@ public class GUI extends JFrame{
         return menu;
     }
 
+    /**
+     * Exit item listener for the Main Menu.
+     * <p>
+     * When "Exit" is selected from the main menu the database connection
+     * is closed and the shiTunes program exits gracefully
+     *
+     */
     class ExitItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             db.close();
@@ -233,42 +267,54 @@ public class GUI extends JFrame{
         }
     }
 
+    /**
+     * Add item listener for the Main Menu
+     * <p>
+     * When "Add Song" is selected from the main menu
+     * it is added to the database, if there is an error
+     * when adding the song to the database (such as the song
+     * already existing)
+     */
     class AddItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             chooser.setFileFilter(filter);  //filters for mp3 files only
-
             //file chooser menu
             if (chooser.showOpenDialog(shiTunesFrame) == JFileChooser.APPROVE_OPTION) {
-
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                db.insertSong(selectedSong);    //adds selected song to database
-
-                //Add row to JTable
-                /*
-                    TODO: PREVENT DUPLICATE ENTRIES (not sure if this is a hard requirement)
-                 */
-
-                DefaultTableModel model = (DefaultTableModel) libTable.getModel();
-
-                model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
-                        selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+                if(db.insertSong(selectedSong)) {
+                    // insert song was successful
+                    // Add row to JTable
+                    DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+                    model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
+                            selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+                } else {
+                    // TODO: display something that tells the user the song isn't being added
+                }
             }
         }
     }
 
+    /**
+     * Delete item listener for the Main Menu
+     * <p>
+     * When "Delete Song" is selected from the main menu
+     * the selected song is deleted from the database
+     * and removed from the Music Library listing
+     *
+     */
     class DeleteItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
 
             //Delete row from JTable
-            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
             int row = libTable.getSelectedRow();    //row number to be deleted
+            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+            String selected = model.getValueAt(row, 5).toString();  // filepath of song @row
             model.removeRow(row);
 
             //Delete song from database by using filepath as an identifier
-            String selected = model.getValueAt(row, 6).toString();  //NOTE: produces ArrayIndexOutofBoundsException,
-                                                                    //but functions just fine.
-            db.deleteSong(selected);    //NOTE: I added an overloaded method deleteSong to ShiBase
+            System.out.println(selected);
+            System.out.println("delete song?" + db.deleteSong(selected));
         }
     }
 
@@ -285,11 +331,6 @@ public class GUI extends JFrame{
         db.insertSong(song);
     }
 
-    /* TODO: For testing purposes. Delete this in production code */
-    public static void main(String[] args) {
-        GUI testing = new GUI();
-        testing.displayGUI();
-    }
 }
 
 
