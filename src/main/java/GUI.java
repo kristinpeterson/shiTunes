@@ -18,14 +18,6 @@ import java.io.IOException;
  */
 public class GUI extends JFrame{
 
-    private static String RESOURCES_DIR = System.getProperty("user.dir") + "/resources/";
-
-    private static String PLAY_RESOURCE = "play.png";
-    private static String PAUSE_RESOURCE = "pause.png";
-    private static String STOP_RESOURCE = "stop.png";
-    private static String PREVIOUS_RESOURCE = "previous.png";
-    private static String NEXT_RESOURCE = "next.png";
-
     private static BufferedImage playResource;
     private static BufferedImage pauseResource;
     private static BufferedImage stopResource;
@@ -43,9 +35,6 @@ public class GUI extends JFrame{
     private JButton previousButton;
     private JButton nextButton;
 
-    private ShiBase db;
-    private MusicPlayer player;
-
     private JFrame shiTunesFrame;
     private JTable libTable;
     private JPanel panel1;
@@ -53,6 +42,9 @@ public class GUI extends JFrame{
     private JFileChooser chooser = new JFileChooser();
     private static FileNameExtensionFilter filter = new FileNameExtensionFilter(
         "MP3 Files", "mp3");
+
+    private MusicPlayer player;
+    private ShiBase db;
 
     private int selectedSongIndex;
 
@@ -64,15 +56,15 @@ public class GUI extends JFrame{
      * Main Menu and buttons (previous, play/pause, stop, next)
      *
      */
-    public GUI() {
-        // Initialize Database
-        db = new ShiBase();
-        db.connect();
+    public GUI(ShiBase db, MusicPlayer player) {
+        // assign db arg to GUI db object
+        this.db = db;
+
         // TODO: REMOVE loadDummyData() IN PRODUCTION CODE? (or keep it for demo)
         loadDummyData();
 
-        // Initialize Music Player
-        player = new MusicPlayer();
+        // assign player arg to GUI player object
+        this.player = player;
 
         // GUI initialization
         shiTunesFrame = new JFrame();
@@ -127,11 +119,11 @@ public class GUI extends JFrame{
     private void addUIComponents() {
         try {
             // Initialize resources
-            playResource = ImageIO.read(new File(RESOURCES_DIR + PLAY_RESOURCE));
-            pauseResource = ImageIO.read(new File(RESOURCES_DIR + PAUSE_RESOURCE));
-            stopResource = ImageIO.read(new File(RESOURCES_DIR + STOP_RESOURCE));
-            previousResource = ImageIO.read(new File(RESOURCES_DIR + PREVIOUS_RESOURCE));
-            nextResource = ImageIO.read(new File(RESOURCES_DIR + NEXT_RESOURCE));
+            playResource = ImageIO.read(getClass().getResourceAsStream("/images/play.png"));
+            pauseResource = ImageIO.read(getClass().getResourceAsStream("/images/pause.png"));
+            stopResource = ImageIO.read(getClass().getResourceAsStream("/images/stop.png"));
+            previousResource = ImageIO.read(getClass().getResourceAsStream("/images/previous.png"));
+            nextResource = ImageIO.read(getClass().getResourceAsStream("/images/next.png"));
             stopIcon = new ImageIcon(stopResource);
             pauseIcon = new ImageIcon(pauseResource);
             playIcon = new ImageIcon(playResource);
@@ -319,8 +311,8 @@ public class GUI extends JFrame{
     }
 
     /* TODO: Delete this in production code */
-    public void loadDummyData() {
-        String music_dir = System.getProperty("user.dir") + "/mp3/";
+    private void loadDummyData() {
+        String music_dir = getClass().getResource("/mp3/").getPath();
         Song song = new Song(music_dir + "1.mp3");
         db.insertSong(song);
         song = new Song(music_dir + "2.mp3");

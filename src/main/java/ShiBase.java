@@ -19,7 +19,7 @@ public class ShiBase {
     /**
      * The columns of the music table
      */
-    public static final String[] MUSIC_COLUMNS =  {"Artist", "Title", "Album", "Year", "Genre", "Filename"};
+    public static final String[] MUSIC_COLUMNS =  {"Artist", "Title", "Album", "Year", "Genre", "File Path"};
 
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
@@ -156,12 +156,11 @@ public class ShiBase {
             //Static errors here. Either make Song object or make Song methods static.
             String query = "INSERT INTO " + MUSIC_TABLE +
                     " (filepath, artist, title, album, year_released, genre)" +
-                    "VALUES ( "
+                    " VALUES ( "
                     + "'" + song.getFilePath() + "',"
                     + "'" + song.getArtist() + "'," + "'" + song.getTitle() + "',"
                     + "'" + song.getAlbum() + "'," + "'" + song.getYear() + "',"
                     + "'" + song.getGenre() + "')";
-
             stmt.execute(query);
             stmt.close();
         }
@@ -273,13 +272,13 @@ public class ShiBase {
                 index++;
             }
             stmt.close();
+            return allSongs;
         }
         catch (SQLException sqlExcept)
         {
             sqlExcept.printStackTrace();
-            return new Object[0][0];
         }
-        return allSongs;
+        return new Object[0][0];
     }
 
     /**

@@ -37,61 +37,73 @@ public class MusicPlayer {
      * Plays the given song
      *
      * @param song the file path of the song to play
+     * @return true if song plays successfully
      */
-    public void play(String song) {
+    public boolean play(String song) {
         try {
             player.open(new File(song));
             player.play();
             playing = true;
             paused = false;
             stopped = false;
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     /**
      * Resumes a previously paused song
      *
+     * @return true if song is resumed successfully
      */
-    public void resume() {
+    public boolean resume() {
         try {
             player.resume();
             playing = true;
             paused = false;
             stopped = false;
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     /**
      * Pauses the currently playing song
      *
+     * @return true if the song is paused successfully
      */
-    public void pause() {
+    public boolean pause() {
         try {
             player.pause();
             playing = false;
             paused = true;
             stopped = false;
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     /**
      * Stops the currently playing song
      *
+     * @return true if song stopped successfully
      */
-    public void stop() {
+    public boolean stop() {
         try {
             player.stop();
             stopped = true;
             playing = false;
             paused = false;
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
     }
 }
