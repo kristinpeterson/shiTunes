@@ -36,12 +36,12 @@ public class MusicPlayer {
     /**
      * Plays the given song
      *
-     * @param song the file path of the song to play
+     * @param filePath the file path of the song to play
      * @return true if song plays successfully
      */
-    public boolean play(String song) {
+    public boolean play(String filePath) {
         try {
-            player.open(new File(song));
+            player.open(new File(filePath));
             player.play();
             playing = true;
             paused = false;

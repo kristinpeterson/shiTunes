@@ -263,18 +263,22 @@ public class GUI extends JFrame{
      */
     public JMenu createFileMenu() {
         JMenu menu = new JMenu("File");
+        JMenuItem openItem = new JMenuItem("Open");
         JMenuItem addItem = new JMenuItem("Add Song");
         JMenuItem deleteItem = new JMenuItem("Delete Song");
         JMenuItem exitItem = new JMenuItem("Exit");
 
+        ActionListener openListener = new OpenItemListener();
         ActionListener addListener = new AddItemListener();
         ActionListener deleteListener = new DeleteItemListener();
         ActionListener exitListener = new ExitItemListener();
 
+        openItem.addActionListener(openListener);
         addItem.addActionListener(addListener);
         deleteItem.addActionListener(deleteListener);
         exitItem.addActionListener(exitListener);
 
+        menu.add(openItem);
         menu.add(addItem);
         menu.add(deleteItem);
         menu.add(exitItem);
@@ -292,6 +296,32 @@ public class GUI extends JFrame{
         public void actionPerformed(ActionEvent event) {
             db.close();
             System.exit(0);
+        }
+    }
+
+    /**
+     * Open item listener for the Main Menu
+     * <p>
+     * When "Open" is selected from the main menu,
+     * a file chooser opens and whichever song is selected
+     * is added to the Music Library (temporarily) and played
+     * <p>
+     * Note: this is different from the "Add Song" command in that
+     * the song is not added to the ShiBase database
+     */
+    class OpenItemListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            chooser.setFileFilter(filter);  //filters for mp3 files only
+            //file chooser menu
+            if (chooser.showOpenDialog(shiTunesFrame) == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = chooser.getSelectedFile();
+                Song selectedSong = new Song(selectedFile.getPath());
+                DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+                model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
+                        selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+                player.play(selectedSong.getFilePath());
+                togglePlayButton.setIcon(pauseIcon);
+            }
         }
     }
 
