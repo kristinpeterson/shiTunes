@@ -6,7 +6,7 @@ import java.io.IOException;
 /**
  * Song class represents a song object
  *
- * @author kristinpeterson
+ * @author shiTunes inc.
  */
 public class Song {
 

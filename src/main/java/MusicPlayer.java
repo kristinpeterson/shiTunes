@@ -6,6 +6,7 @@ import java.io.File;
  * MusicPlayer class represents a persistent MusicPlayer object
  * This class handles all operations related to music playing
  *
+ * @author shiTunes inc.
  */
 public class MusicPlayer {
 

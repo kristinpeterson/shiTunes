@@ -1,11 +1,8 @@
 /**
+ * This is the main entry point of the shiTunes application
+ * handling initialization and display of the GUI
  *
- * This will be the main class of the shiTunes application
- * handling initialization, etc
- *
- * As of right now this class has a ton of test code in it that
- * will need to be removed.
- *
+ * @author shiTunes inc.
  */
 public class ShiTunes {
     public static void main(String[] args) {
@@ -15,6 +12,7 @@ public class ShiTunes {
         // Display GUI once initialized
         gui.displayGUI();
 
+        // TODO: remove test code below in final product
         /* Test code [remove / comment this out in production]
         // Init DB
         ShiBase db = new ShiBase();
