@@ -175,17 +175,17 @@ public class GUI extends JFrame{
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if(getSelectedSong() != null && !getSelectedSong().isEmpty()) {
-                        if(player.state == 2) {
+                        if(player.getState() == 2) {
                             // player.state == playing
                             // pause: toggle icon, pause song
                             togglePlayButton.setIcon(playIcon);
                             player.pause();
-                        } else if(player.state == 4) {
+                        } else if(player.getState() == 4) {
                             // player.state == paused
                             // resume: toggle icon, resume song
                             togglePlayButton.setIcon(pauseIcon);
                             player.resume();
-                        } else if(player.state == 3 || player.state == 0){
+                        } else if(player.getState() == 3 || player.getState() == 0){
                             // player.state == stopped
                             // play: toggle icon, play song
                             togglePlayButton.setIcon(pauseIcon);

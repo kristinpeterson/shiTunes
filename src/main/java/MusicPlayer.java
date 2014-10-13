@@ -18,6 +18,8 @@ public class MusicPlayer implements BasicPlayerListener {
     /**
      * Indicates the player state
      * <p>
+     * State Codes:
+     * <p>
      * 0: OPENING
      * 1: OPENED
      * 2: PLAYING
@@ -25,7 +27,7 @@ public class MusicPlayer implements BasicPlayerListener {
      * 4: PAUSED
      *
      */
-    public int state;
+    private int state;
 
     private BasicPlayer player;
     private BasicController controller;
@@ -158,13 +160,30 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
+     * Public accessor for player state
+     * <p>
+     * States Codes:
+     * <p>
+     * 0: OPENING
+     * 1: OPENED
+     * 2: PLAYING
+     * 3: STOPPED
+     * 4: PAUSED
+     *
+     * @return the players state
+     */
+    public int getState() {
+        return state;
+    }
+
+    /**
      * A handle to the BasicPlayer, plugins may control the player through
      * the controller (play, stop, ...)
      *
-     * @param controller : a handle to the player
+     * @param controller a handle to the player
      */
     public void setController(BasicController controller)
     {
-        System.out.println("setController : " + controller);
+        // System.out.println("setController : " + controller);
     }
 }
