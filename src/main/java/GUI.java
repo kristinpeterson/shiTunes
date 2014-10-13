@@ -175,7 +175,8 @@ public class GUI extends JFrame{
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     System.out.println("song index: " + selectedSongIndex);
-                    if(getSelectedSong() != null && !getSelectedSong().isEmpty()) {
+                    if(getSongFilenameByIndex(selectedSongIndex) != null
+                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
                         if(player.getState() == 2 || player.getState() == 5) {
                             // player.state == playing
                             // pause: toggle icon, pause song
@@ -190,7 +191,7 @@ public class GUI extends JFrame{
                             // player.state == stopped
                             // play: toggle icon, play song
                             togglePlayButton.setIcon(pauseIcon);
-                            player.play(getSelectedSong());
+                            player.play(getSongFilenameByIndex(selectedSongIndex));
                         }
                     } else {
                         // do nothing, there is no selected song
@@ -221,7 +222,7 @@ public class GUI extends JFrame{
                         if(selectedSongIndex > 0) {
                             selectedSongIndex--;
                         }
-                        player.play(getSelectedSong());
+                        player.play(getSongFilenameByIndex(selectedSongIndex));
                     }
                 }
             });
@@ -236,7 +237,7 @@ public class GUI extends JFrame{
                         // play next song
                         player.stop();
                         selectedSongIndex++;
-                        player.play(getSelectedSong());
+                        player.play(getSongFilenameByIndex(selectedSongIndex));
                     }
                 }
             });
@@ -255,12 +256,17 @@ public class GUI extends JFrame{
     }
 
     /**
-     * Gets the currently selected song filename
+     * Gets the song filename based on song library index
      *
-     * @return the filename for the currently selected song
+     * @return the song filename based on song library index
      */
-    private String getSelectedSong() {
-        return libTable.getValueAt(selectedSongIndex, 5).toString();
+    private String getSongFilenameByIndex(int index) {
+        // Ensure index is within bounds
+        if(index > 0 && index < libTable.getRowCount() - 1) {
+            return libTable.getValueAt(index, 5).toString();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -372,8 +378,21 @@ public class GUI extends JFrame{
     class DeleteItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
 
-            //Delete row from JTable
-            int row = libTable.getSelectedRow();    //row number to be deleted
+            // Get selected row to be deleted
+            int row = libTable.getSelectedRow();
+
+            System.out.println("getsongfilenamebyindex(row): " + getSongFilenameByIndex(row));
+            System.out.println("player.getcurrentsong(): " + player.getCurrentSong());
+
+            // Stop player if song being deleted is the current song on the player
+            if(getSongFilenameByIndex(row).equals(player.getCurrentSong())) {
+                if(player.getState() == 2) {
+                    // if state == playing, toggle pause/play icon to play
+                    togglePlayButton.setIcon(playIcon);
+                }
+                player.stop();
+            }
+
             DefaultTableModel model = (DefaultTableModel) libTable.getModel();
             String selected = model.getValueAt(row, 5).toString();  // filepath of song @row
             model.removeRow(row);

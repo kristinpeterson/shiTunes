@@ -29,7 +29,7 @@ public class MusicPlayer implements BasicPlayerListener {
      *
      */
     private int state;
-
+    private String currentSong;
     private BasicPlayer player;
     private BasicController controller;
 
@@ -53,6 +53,7 @@ public class MusicPlayer implements BasicPlayerListener {
         try {
             controller.open(new File(filePath));
             controller.play();
+            setCurrentSong(filePath);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -104,6 +105,25 @@ public class MusicPlayer implements BasicPlayerListener {
         }
         return false;
     }
+
+    /**
+     * Gets the current song filename
+     *
+     * @return the current song's filename
+     */
+    public String getCurrentSong() {
+        return currentSong;
+    }
+
+    /**
+     * Sets the current song filename
+     *
+     * @param currentSong the current song (filename) to set
+     */
+    public void setCurrentSong(String currentSong) {
+        this.currentSong = currentSong;
+    }
+
     /**
      * Open callback, stream is ready to play.
      *
