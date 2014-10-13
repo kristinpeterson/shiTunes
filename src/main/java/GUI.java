@@ -175,6 +175,7 @@ public class GUI extends JFrame{
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     System.out.println("song index: " + selectedSongIndex);
+                    System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
                     if(getSongFilenameByIndex(selectedSongIndex) != null
                             && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
                         if(player.getState() == 2 || player.getState() == 5) {
@@ -262,7 +263,7 @@ public class GUI extends JFrame{
      */
     private String getSongFilenameByIndex(int index) {
         // Ensure index is within bounds
-        if(index > 0 && index < libTable.getRowCount() - 1) {
+        if(index >= 0 && index < libTable.getRowCount()) {
             return libTable.getValueAt(index, 5).toString();
         } else {
             return null;
