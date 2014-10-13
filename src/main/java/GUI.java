@@ -73,7 +73,7 @@ public class GUI extends JFrame{
         // GUI initialization
         shiTunesFrame = new JFrame();
         shiTunesFrame.setTitle("shiTunes");
-        shiTunesFrame.setSize(600, 400);
+        shiTunesFrame.setMinimumSize(new Dimension(900,600));
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -175,15 +175,18 @@ public class GUI extends JFrame{
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if(getSelectedSong() != null && !getSelectedSong().isEmpty()) {
-                        if(player.playing) {
+                        if(player.state == 2) {
+                            // player.state == playing
                             // pause: toggle icon, pause song
                             togglePlayButton.setIcon(playIcon);
                             player.pause();
-                        } else if(player.paused) {
+                        } else if(player.state == 4) {
+                            // player.state == paused
                             // resume: toggle icon, resume song
                             togglePlayButton.setIcon(pauseIcon);
                             player.resume();
-                        } else if(player.stopped){
+                        } else if(player.state == 3 || player.state == 0){
+                            // player.state == stopped
                             // play: toggle icon, play song
                             togglePlayButton.setIcon(pauseIcon);
                             player.play(getSelectedSong());
