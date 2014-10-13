@@ -174,8 +174,9 @@ public class GUI extends JFrame{
             // Set action listener for play/pause toggle button
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    System.out.println("song index: " + selectedSongIndex);
                     if(getSelectedSong() != null && !getSelectedSong().isEmpty()) {
-                        if(player.getState() == 2) {
+                        if(player.getState() == 2 || player.getState() == 5) {
                             // player.state == playing
                             // pause: toggle icon, pause song
                             togglePlayButton.setIcon(playIcon);
@@ -200,6 +201,7 @@ public class GUI extends JFrame{
             // Set action listener for stop button
             stopButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    System.out.println("song index: " + selectedSongIndex);
                     player.stop();
                     togglePlayButton.setIcon(playIcon);
                 }
@@ -208,6 +210,7 @@ public class GUI extends JFrame{
             // Set action listener for previous button
             previousButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    System.out.println("song index: " + selectedSongIndex);
                     if(selectedSongIndex == 0) {
                         // at top of libTable, do nothing
                     } else {
@@ -215,7 +218,9 @@ public class GUI extends JFrame{
                         // decriment selectedSongIndex
                         // play previous song
                         player.stop();
-                        selectedSongIndex--;
+                        if(selectedSongIndex > 0) {
+                            selectedSongIndex--;
+                        }
                         player.play(getSelectedSong());
                     }
                 }
@@ -224,9 +229,8 @@ public class GUI extends JFrame{
             // Set action listener for next button
             nextButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if(selectedSongIndex == libTable.getRowCount() - 1) {
-                        // at end of libTable, do nothing
-                    } else {
+                    System.out.println("song index: " + selectedSongIndex);
+                    if(selectedSongIndex < libTable.getRowCount() - 1) {
                         // stop current song
                         // decriment selectedSongIndex
                         // play next song
@@ -349,6 +353,7 @@ public class GUI extends JFrame{
                     DefaultTableModel model = (DefaultTableModel) libTable.getModel();
                     model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
                             selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+
                 } else {
                     // TODO: display something that tells the user the song isn't being added
                 }
@@ -374,8 +379,7 @@ public class GUI extends JFrame{
             model.removeRow(row);
 
             //Delete song from database by using filepath as an identifier
-            System.out.println(selected);
-            System.out.println("delete song?" + db.deleteSong(selected));
+            db.deleteSong(selected);
         }
     }
 

@@ -25,6 +25,7 @@ public class MusicPlayer implements BasicPlayerListener {
      * 2: PLAYING
      * 3: STOPPED
      * 4: PAUSED
+     * 5: RESUMED
      *
      */
     private int state;
@@ -103,7 +104,6 @@ public class MusicPlayer implements BasicPlayerListener {
         }
         return false;
     }
-
     /**
      * Open callback, stream is ready to play.
      *
@@ -117,7 +117,7 @@ public class MusicPlayer implements BasicPlayerListener {
     {
         // Pay attention to properties. It's useful to get duration,
         // bitrate, channels, even tag such as ID3v2.
-        System.out.println("opened : "+properties.toString());
+        // System.out.println("opened : "+properties.toString());
     }
 
     /**
@@ -149,13 +149,14 @@ public class MusicPlayer implements BasicPlayerListener {
      * 2: PLAYING
      * 3: STOPPED
      * 4: PAUSED
+     * 5: RESUMED
+     *
      *
      * @param event the basicplayer event (OPENED, PAUSED, PLAYING, SEEKING...)
      */
     public void stateUpdated(BasicPlayerEvent event)
     {
         // Notification of BasicPlayer states (opened, playing, end of media, ...)
-        System.out.println(event.getCode());
         state = event.getCode();
     }
 
