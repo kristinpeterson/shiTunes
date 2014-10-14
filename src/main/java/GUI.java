@@ -24,30 +24,30 @@ public class GUI extends JFrame{
 
     // GUI Frame and contents
     private JFrame shiTunesFrame;
-    private JPanel mainPanel;
-    private JMenuBar menuBar;
     private JPanel buttonPanel;
-    private JPanel libraryPanel;
     private JTable libTable;
+    JPanel mainPanel;
+    JMenuBar menuBar;
+    JPanel libraryPanel;
 
     // UI Components
-    private static BufferedImage playResource;
-    private static BufferedImage pauseResource;
-    private static BufferedImage stopResource;
-    private static BufferedImage previousResource;
-    private static BufferedImage nextResource;
+    BufferedImage playResource;
+    BufferedImage pauseResource;
+    BufferedImage stopResource;
+    BufferedImage previousResource;
+    BufferedImage nextResource;
 
-    private static ImageIcon stopIcon;
-    private static ImageIcon pauseIcon;
-    private static ImageIcon playIcon;
-    private static ImageIcon previousIcon;
-    private static ImageIcon nextIcon;
+    ImageIcon stopIcon;
+    ImageIcon pauseIcon;
+    ImageIcon playIcon;
+    ImageIcon previousIcon;
+    ImageIcon nextIcon;
 
-    private JButton playButton;
-    private JButton pauseButton;
-    private JButton stopButton;
-    private JButton previousButton;
-    private JButton nextButton;
+    JButton playButton;
+    JButton pauseButton;
+    JButton stopButton;
+    JButton previousButton;
+    JButton nextButton;
 
     // File Chooser
     private JFileChooser chooser = new JFileChooser();
@@ -76,7 +76,7 @@ public class GUI extends JFrame{
         shiTunesFrame.setTitle("shiTunes");
         shiTunesFrame.setMinimumSize(new Dimension(900,600));
         shiTunesFrame.setLocationRelativeTo(null);
-        shiTunesFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         // Panel initialization
         mainPanel = new JPanel();
@@ -174,43 +174,11 @@ public class GUI extends JFrame{
             previousButton.setPreferredSize(new Dimension(40, 40));
             nextButton.setPreferredSize(new Dimension(40, 40));
 
-            /* Set action listener for play/pause toggle button
-            togglePlayButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.out.println("song index: " + selectedSongIndex);
-                    System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
-                    if(getSongFilenameByIndex(selectedSongIndex) != null
-                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
-                        if(player.getState() == 2 || player.getState() == 5) {
-                            // player.state == playing/resumed
-                            // pause: toggle icon, pause song
-                            togglePlayButton.setIcon(playIcon);
-                            player.pause();
-                        } else if(player.getState() == 4) {
-                            // player.state == paused
-                            // resume: toggle icon, resume song
-                            togglePlayButton.setIcon(pauseIcon);
-                            player.resume();
-                        } else if(player.getState() == 3 || player.getState() == 0){
-                            // player.state == stopped
-                            // play: toggle icon, play song
-                            togglePlayButton.setIcon(pauseIcon);
-                            player.play(getSongFilenameByIndex(selectedSongIndex));
-                        }
-                    } else {
-                        // do nothing, there is no selected song
-                    }
-                }
-            }); */
-
             // Set action listener for play button
             playButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    System.out.println("song index: " + selectedSongIndex);
-                    System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
-                    System.out.println("player.getcurrentsong(): " + player.getCurrentSong());
-                    boolean selectedSongExists = getSongFilenameByIndex(selectedSongIndex) != null
-                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty();
+                    String songFilePath = getSongFilenameByIndex(selectedSongIndex);
+                    boolean selectedSongExists = songFilePath != null && !songFilePath.isEmpty();
                     boolean selectedSongIsCurrent = getSongFilenameByIndex(selectedSongIndex).equals(player.getCurrentSong());
                     int playerState = player.getState();
 
@@ -224,10 +192,15 @@ public class GUI extends JFrame{
                             // otherwise, play selected song
                             // if player.state == stopped
                             // or player.state == opening (initial state before any song has played)
-                            player.play(getSongFilenameByIndex(selectedSongIndex));
+                            player.play(songFilePath);
                         } else if (!selectedSongIsCurrent) {
                             player.stop();
-                            player.play(getSongFilenameByIndex(selectedSongIndex));
+                            player.play(songFilePath);
+                        } else if (playerState == 2 || playerState == 5) {
+                            // player.state == playing/resumed
+                            // stop and then play song from beginning
+                            player.stop();
+                            player.play(songFilePath);
                         }
                     }
                 }
