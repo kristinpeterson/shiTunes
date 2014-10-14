@@ -208,15 +208,25 @@ public class GUI extends JFrame{
                 public void actionPerformed(ActionEvent e) {
                     System.out.println("song index: " + selectedSongIndex);
                     System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
+                    System.out.println("player.getcurrentsong(): " + player.getCurrentSong());
+                    boolean selectedSongExists = getSongFilenameByIndex(selectedSongIndex) != null
+                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty();
+                    boolean selectedSongIsCurrent = getSongFilenameByIndex(selectedSongIndex).equals(player.getCurrentSong());
+                    int playerState = player.getState();
 
-                    // If play is pressed when no song is loaded to player
-                    if(getSongFilenameByIndex(selectedSongIndex) != null
-                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
-                        if (player.getState() == 4) {
-                            // player.state == paused
+                    if(selectedSongExists) {
+                        // if there is a selected song
+                        if(selectedSongIsCurrent && playerState == 4) {
+                            // if selected song is current song on player
+                            // and player.state == paused
                             player.resume();
-                        } else if (player.getState() == 3 || player.getState() == 0) {
-                            // player.state == stopped
+                        } else if (playerState == 3 || playerState == 0) {
+                            // otherwise, play selected song
+                            // if player.state == stopped
+                            // or player.state == opening (initial state before any song has played)
+                            player.play(getSongFilenameByIndex(selectedSongIndex));
+                        } else if (!selectedSongIsCurrent) {
+                            player.stop();
                             player.play(getSongFilenameByIndex(selectedSongIndex));
                         }
                     }
@@ -454,7 +464,4 @@ public class GUI extends JFrame{
         song = new Song(music_dir + "4.mp3");
         db.insertSong(song);
     }
-
 }
-
-

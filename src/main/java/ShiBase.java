@@ -24,7 +24,7 @@ public class ShiBase {
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
     private Connection conn;
-    private Statement stmt;
+    private PreparedStatement stmt;
     private boolean connected;
 
     /**
@@ -103,8 +103,8 @@ public class ShiBase {
                         "album VARCHAR(150), " +
                         "year_released VARCHAR(4), " +
                         "genre VARCHAR(20))";
-                stmt = conn.createStatement();
-                stmt.execute(query);
+                stmt = conn.prepareStatement(query);
+                stmt.execute();
                 stmt.close();
                 return true;
             }
@@ -124,10 +124,9 @@ public class ShiBase {
     public boolean dropTable(String tableName) {
         try
         {
-            stmt = conn.createStatement();
             String query ="DROP TABLE " + tableName;
-
-            stmt.execute(query);
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
             stmt.close();
         }
         catch (SQLException sqlExcept)
@@ -151,17 +150,17 @@ public class ShiBase {
         }
         try
         {
-            stmt = conn.createStatement();
-
-            //Static errors here. Either make Song object or make Song methods static.
             String query = "INSERT INTO " + MUSIC_TABLE +
                     " (filepath, artist, title, album, year_released, genre)" +
-                    " VALUES ( "
-                    + "'" + song.getFilePath() + "',"
-                    + "'" + song.getArtist() + "'," + "'" + song.getTitle() + "',"
-                    + "'" + song.getAlbum() + "'," + "'" + song.getYear() + "',"
-                    + "'" + song.getGenre() + "')";
-            stmt.execute(query);
+                    " VALUES (?, ?, ?, ?, ?, ?)";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, song.getFilePath());
+            stmt.setString(2, song.getArtist());
+            stmt.setString(3, song.getTitle());
+            stmt.setString(4, song.getAlbum());
+            stmt.setString(5, song.getYear());
+            stmt.setString(6, song.getGenre());
+            stmt.execute();
             stmt.close();
         }
         catch (SQLException sqlExcept)
@@ -183,11 +182,11 @@ public class ShiBase {
 
         try
         {
-            stmt = conn.createStatement();
-
             String query = "SELECT count(*) AS rowcount FROM " + MUSIC_TABLE +
-                    " WHERE filepath='" + filepath + "'";
-            ResultSet resultSet = stmt.executeQuery(query);
+                    " WHERE filepath=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, filepath);
+            ResultSet resultSet = stmt.executeQuery();
             resultSet.next();
             rowCount = resultSet.getInt("rowcount");
             stmt.close();
@@ -212,11 +211,10 @@ public class ShiBase {
     public boolean deleteSong(String filePath) {
         if(songExists(filePath)) {
             try {
-                stmt = conn.createStatement();
                 String query = "DELETE FROM " + MUSIC_TABLE + " WHERE " +
                         "filePath= '" + filePath + "'";
-
-                stmt.execute(query);
+                stmt = conn.prepareStatement(query);
+                stmt.execute();
                 stmt.close();
                 return true;
             } catch (SQLException sqlExcept) {
@@ -245,11 +243,10 @@ public class ShiBase {
 
         try
         {
-            stmt = conn.createStatement();
-
             // Get record count
             String rowCountQuery = "SELECT count(*) AS rowcount FROM " + MUSIC_TABLE;
-            ResultSet rowCountRS = stmt.executeQuery(rowCountQuery);
+            stmt = conn.prepareStatement(rowCountQuery);
+            ResultSet rowCountRS = stmt.executeQuery();
             rowCountRS.next();
             rowCount = rowCountRS.getInt("rowcount");
 
@@ -258,7 +255,8 @@ public class ShiBase {
 
             // Get all records
             String allSongsQuery = "SELECT * FROM " + MUSIC_TABLE + " ORDER BY artist";
-            ResultSet allSongsRS = stmt.executeQuery(allSongsQuery);
+            stmt = conn.prepareStatement(allSongsQuery);
+            ResultSet allSongsRS = stmt.executeQuery();
 
             while(allSongsRS.next()) {
                 filePath = allSongsRS.getString("filePath");

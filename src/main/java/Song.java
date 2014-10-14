@@ -30,18 +30,18 @@ public class Song {
             Mp3File mp3file = new Mp3File(filePath);
             if (mp3file.hasId3v1Tag()) {
                 ID3v1 id3v1Tag = mp3file.getId3v1Tag();
-                this.artist = id3v1Tag.getArtist().replace("'", "''");
-                this.title = id3v1Tag.getTitle().replace("'", "''");
-                this.album = id3v1Tag.getAlbum().replace("'", "''");
-                this.year = id3v1Tag.getYear().replace("'", "''");
-                this.genre = id3v1Tag.getGenreDescription().replace("'", "''");
+                this.artist = id3v1Tag.getArtist();
+                this.title = id3v1Tag.getTitle();
+                this.album = id3v1Tag.getAlbum();
+                this.year = id3v1Tag.getYear();
+                this.genre = id3v1Tag.getGenreDescription();
             } else if (mp3file.hasId3v2Tag()) {
                 ID3v2 id3v2Tag = mp3file.getId3v2Tag();
-                this.artist = id3v2Tag.getArtist().replace("'", "''");
-                this.title = id3v2Tag.getTitle().replace("'", "''");
-                this.album = id3v2Tag.getAlbum().replace("'", "''");
-                this.year = id3v2Tag.getYear().replace("'", "''");
-                this.genre = id3v2Tag.getGenreDescription().replace("'", "''");
+                this.artist = id3v2Tag.getArtist();
+                this.title = id3v2Tag.getTitle();
+                this.album = id3v2Tag.getAlbum();
+                this.year = id3v2Tag.getYear();
+                this.genre = id3v2Tag.getGenreDescription();
             }
         } catch (IOException ioe) {
             System.out.println("IOException occurred");
