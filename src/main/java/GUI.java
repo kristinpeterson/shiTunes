@@ -387,6 +387,7 @@ public class GUI extends JFrame{
                 DefaultTableModel model = (DefaultTableModel) libTable.getModel();
                 model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
                         selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+                selectedSongIndex = model.getRowCount() - 1;
                 player.play(selectedSong.getFilePath());
             }
         }
