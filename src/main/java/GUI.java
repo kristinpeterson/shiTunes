@@ -5,11 +5,20 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * The GUI class builds the shiTunes Graphical User Interface
@@ -107,14 +116,46 @@ public class GUI extends JFrame{
         libTable.setPreferredScrollableViewportSize(new Dimension(500, 200));
         libTable.setFillsViewportHeight(true);
 
+        // Set drop target on scroll table
+        // enabling drag and drop of files into library
+        scrollPane.setDropTarget(new DropTarget(){
+            @Override
+            public synchronized void drop(DropTargetDropEvent dtde) {
+                dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
+                Transferable t = dtde.getTransferable();
+                List fileList = null;
+                String filepath;
+                try {
+                    fileList = (List) t.getTransferData(DataFlavor.javaFileListFlavor);
+                    for(int i = 0; i < fileList.size(); i++) {
+                        Song song = new Song(fileList.get(i).toString());
+                        addSongToLibrary(song);
+                    }
+                } catch (UnsupportedFlavorException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
         // Add scroll pane (library table) to library panel
         libraryPanel.add(scrollPane);
 
-        // Setup Library table listener
+        // Setup Library table listener for selected row
         libTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
             public void valueChanged(ListSelectionEvent event) {
                 // Store selected song row index for use in skipping and getting selected song
                 selectedSongIndex = libTable.getSelectedRow();
+            }
+        });
+
+
+        libTable.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent me) {
+                if (me.getClickCount() == 2) {
+                    playSong();
+                }
             }
         });
 
@@ -177,32 +218,7 @@ public class GUI extends JFrame{
             // Set action listener for play button
             playButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    String songFilePath = getSongFilenameByIndex(selectedSongIndex);
-                    boolean selectedSongExists = songFilePath != null && !songFilePath.isEmpty();
-                    boolean selectedSongIsCurrent = getSongFilenameByIndex(selectedSongIndex).equals(player.getCurrentSong());
-                    int playerState = player.getState();
-
-                    if(selectedSongExists) {
-                        // if there is a selected song
-                        if(selectedSongIsCurrent && playerState == 4) {
-                            // if selected song is current song on player
-                            // and player.state == paused
-                            player.resume();
-                        } else if (playerState == 3 || playerState == 0) {
-                            // otherwise, play selected song
-                            // if player.state == stopped
-                            // or player.state == opening (initial state before any song has played)
-                            player.play(songFilePath);
-                        } else if (!selectedSongIsCurrent) {
-                            player.stop();
-                            player.play(songFilePath);
-                        } else if (playerState == 2 || playerState == 5) {
-                            // player.state == playing/resumed
-                            // stop and then play song from beginning
-                            player.stop();
-                            player.play(songFilePath);
-                        }
-                    }
+                        playSong();
                 }
             });
 
@@ -280,6 +296,56 @@ public class GUI extends JFrame{
         } catch (IOException e) {
             // IOException thrown while reading resource files
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Plays the selected song
+     */
+    private void playSong() {
+        String songFilePath = getSongFilenameByIndex(selectedSongIndex);
+        boolean selectedSongExists = songFilePath != null && !songFilePath.isEmpty();
+        boolean selectedSongIsCurrent = getSongFilenameByIndex(selectedSongIndex).equals(player.getCurrentSong());
+        int playerState = player.getState();
+
+        if (selectedSongExists) {
+            // if there is a selected song
+            if (selectedSongIsCurrent && playerState == 4) {
+                // if selected song is current song on player
+                // and player.state == paused
+                player.resume();
+            } else if (playerState == 3 || playerState == 0) {
+                // otherwise, play selected song
+                // if player.state == stopped
+                // or player.state == opening (initial state before any song has played)
+                player.play(songFilePath);
+            } else if (!selectedSongIsCurrent) {
+                player.stop();
+                player.play(songFilePath);
+            } else if (playerState == 2 || playerState == 5) {
+                // player.state == playing/resumed
+                // stop and then play song from beginning
+                player.stop();
+                player.play(songFilePath);
+            }
+        }
+    }
+
+    /**
+     * Adds the given song to the library list and database
+     *
+     * @param song the song to add to the library/database
+     */
+    private void addSongToLibrary(Song song) {
+        if(db.insertSong(song)) {
+            // insert song was successful
+            // Add row to JTable
+            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+            model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
+                    song.getYear(), song.getGenre(), song.getFilePath()});
+
+        } else {
+            // TODO: display something that tells the user the song isn't being added
         }
     }
 
@@ -381,16 +447,7 @@ public class GUI extends JFrame{
             if (chooser.showOpenDialog(shiTunesFrame) == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                if(db.insertSong(selectedSong)) {
-                    // insert song was successful
-                    // Add row to JTable
-                    DefaultTableModel model = (DefaultTableModel) libTable.getModel();
-                    model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
-                            selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
-
-                } else {
-                    // TODO: display something that tells the user the song isn't being added
-                }
+                addSongToLibrary(selectedSong);
             }
         }
     }
