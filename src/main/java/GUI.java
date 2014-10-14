@@ -436,9 +436,6 @@ public class GUI extends JFrame{
             // Get selected row to be deleted
             int row = libTable.getSelectedRow();
 
-            System.out.println("getsongfilenamebyindex(row): " + getSongFilenameByIndex(row));
-            System.out.println("player.getcurrentsong(): " + player.getCurrentSong());
-
             // Stop player if song being deleted is the current song on the player
             if(getSongFilenameByIndex(row).equals(player.getCurrentSong())) {
                 player.stop();

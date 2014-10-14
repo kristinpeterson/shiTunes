@@ -177,7 +177,7 @@ public class ShiBase {
      * @param filepath the filepath of the song to look for in the database
      * @return true if the song exists in the database
      */
-    public boolean songExists(String filepath) {
+    public boolean songExists(String filePath) {
         int rowCount = 0;
 
         try
@@ -185,7 +185,7 @@ public class ShiBase {
             String query = "SELECT count(*) AS rowcount FROM " + MUSIC_TABLE +
                     " WHERE filepath=?";
             stmt = conn.prepareStatement(query);
-            stmt.setString(1, filepath);
+            stmt.setString(1, filePath);
             ResultSet resultSet = stmt.executeQuery();
             resultSet.next();
             rowCount = resultSet.getInt("rowcount");
@@ -211,9 +211,9 @@ public class ShiBase {
     public boolean deleteSong(String filePath) {
         if(songExists(filePath)) {
             try {
-                String query = "DELETE FROM " + MUSIC_TABLE + " WHERE " +
-                        "filePath= '" + filePath + "'";
+                String query = "DELETE FROM " + MUSIC_TABLE + " WHERE filePath=?";
                 stmt = conn.prepareStatement(query);
+                stmt.setString(1, filePath);
                 stmt.execute();
                 stmt.close();
                 return true;
