@@ -11,10 +11,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +35,7 @@ public class GUI extends JFrame{
     JPanel mainPanel;
     JMenuBar menuBar;
     JPanel libraryPanel;
+    JPopupMenu popup;
 
     // UI Components
     BufferedImage playResource;
@@ -96,6 +94,9 @@ public class GUI extends JFrame{
         // Menu bar initialization
         menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
+
+        //Popup menu initialization
+        createPopupMenu();
 
         // Build library table
         // instance library table model - this prevents individual cells from being editable
@@ -477,6 +478,54 @@ public class GUI extends JFrame{
 
             //Delete song from database by using filepath as an identifier
             db.deleteSong(selected);
+        }
+    }
+
+    /**
+     * Initializes popup menu for file addition/deletion
+     * <p>
+     * When user right clicks anywhere on JTable
+     * menu items for delete and add popup.
+     *
+     *
+     */
+    private void createPopupMenu() {
+        popup = new JPopupMenu();
+
+        JMenuItem popupAdd = new JMenuItem("Add Song");
+        JMenuItem popupDelete = new JMenuItem("Delete Song");
+        ActionListener addListener = new AddItemListener();
+        ActionListener deleteListener = new DeleteItemListener();
+        popupAdd.addActionListener(addListener);
+        popupAdd.addActionListener(deleteListener);
+
+        MouseListener popupListen = new PopupListener();
+        libTable.addMouseListener(popupListen);
+
+        popup.add(popupAdd);
+        popup.add(popupDelete);
+    }
+
+    /**
+     * Popup listener for the right click menu
+     * <p>
+     * Interprets right mouse click to trigger
+     * showing the popup menu
+     *
+     *
+     */
+    class PopupListener extends MouseAdapter {
+        public void mousePressed(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+        public void mouseReleased(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        public void maybeShowPopup(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                popup.show(e.getComponent(), e.getX(), e.getY());
+            }
         }
     }
 
