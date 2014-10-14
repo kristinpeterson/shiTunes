@@ -95,8 +95,7 @@ public class GUI extends JFrame{
         menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
 
-        //Popup menu initialization
-        createPopupMenu();
+
 
         // Build library table
         // instance library table model - this prevents individual cells from being editable
@@ -111,6 +110,9 @@ public class GUI extends JFrame{
 
         // Instantiate library table based off table model
         libTable = new JTable(tableModel);
+
+        //Popup menu initialization
+        createPopupMenu();
 
         // Instantiate scroll pane for library
         JScrollPane scrollPane = new JScrollPane(libTable);
