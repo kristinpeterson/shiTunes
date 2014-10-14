@@ -499,7 +499,7 @@ public class GUI extends JFrame{
         ActionListener addListener = new AddItemListener();
         ActionListener deleteListener = new DeleteItemListener();
         popupAdd.addActionListener(addListener);
-        popupAdd.addActionListener(deleteListener);
+        popupDelete.addActionListener(deleteListener);
 
         MouseListener popupListen = new PopupListener();
         libTable.addMouseListener(popupListen);
