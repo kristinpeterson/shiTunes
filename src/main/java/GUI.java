@@ -43,7 +43,8 @@ public class GUI extends JFrame{
     private static ImageIcon previousIcon;
     private static ImageIcon nextIcon;
 
-    private JButton togglePlayButton;
+    private JButton playButton;
+    private JButton pauseButton;
     private JButton stopButton;
     private JButton previousButton;
     private JButton nextButton;
@@ -160,18 +161,20 @@ public class GUI extends JFrame{
 
             // Initialize buttons (toggle play/pause, stop, previous, next)
             // Setting icon during intialization
-            togglePlayButton = new JButton(playIcon);
+            playButton = new JButton(playIcon);
+            pauseButton = new JButton(pauseIcon);
             stopButton = new JButton(stopIcon);
             previousButton = new JButton(previousIcon);
             nextButton = new JButton(nextIcon);
 
             // Set preferred button size
-            togglePlayButton.setPreferredSize(new Dimension(40, 40));
+            playButton.setPreferredSize(new Dimension(40, 40));
+            pauseButton.setPreferredSize(new Dimension(40, 40));
             stopButton.setPreferredSize(new Dimension(40, 40));
             previousButton.setPreferredSize(new Dimension(40, 40));
             nextButton.setPreferredSize(new Dimension(40, 40));
 
-            // Set action listener for play/pause toggle button
+            /* Set action listener for play/pause toggle button
             togglePlayButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     System.out.println("song index: " + selectedSongIndex);
@@ -179,7 +182,7 @@ public class GUI extends JFrame{
                     if(getSongFilenameByIndex(selectedSongIndex) != null
                             && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
                         if(player.getState() == 2 || player.getState() == 5) {
-                            // player.state == playing
+                            // player.state == playing/resumed
                             // pause: toggle icon, pause song
                             togglePlayButton.setIcon(playIcon);
                             player.pause();
@@ -198,6 +201,41 @@ public class GUI extends JFrame{
                         // do nothing, there is no selected song
                     }
                 }
+            }); */
+
+            // Set action listener for play button
+            playButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    System.out.println("song index: " + selectedSongIndex);
+                    System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
+
+                    // If play is pressed when no song is loaded to player
+                    if(getSongFilenameByIndex(selectedSongIndex) != null
+                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
+                        if (player.getState() == 4) {
+                            // player.state == paused
+                            player.resume();
+                        } else if (player.getState() == 3 || player.getState() == 0) {
+                            // player.state == stopped
+                            player.play(getSongFilenameByIndex(selectedSongIndex));
+                        }
+                    }
+                }
+            });
+
+            // Set action listener for pause button
+            pauseButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    System.out.println("song index: " + selectedSongIndex);
+                    System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
+                    if(getSongFilenameByIndex(selectedSongIndex) != null
+                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
+                        if(player.getState() == 2 || player.getState() == 5) {
+                            // player.state == playing/resumed
+                            player.pause();
+                        }
+                    }
+                }
             });
 
             // Set action listener for stop button
@@ -205,7 +243,6 @@ public class GUI extends JFrame{
                 public void actionPerformed(ActionEvent e) {
                     System.out.println("song index: " + selectedSongIndex);
                     player.stop();
-                    togglePlayButton.setIcon(playIcon);
                 }
             });
 
@@ -216,14 +253,17 @@ public class GUI extends JFrame{
                     if(selectedSongIndex == 0) {
                         // at top of libTable, do nothing
                     } else {
-                        // stop current song
-                        // decriment selectedSongIndex
-                        // play previous song
-                        player.stop();
-                        if(selectedSongIndex > 0) {
-                            selectedSongIndex--;
+                        if(player.getState() == 2 || player.getState() == 5) {
+                            // if player is currently playing/resumed
+                            // stop current song
+                            // decriment selectedSongIndex
+                            // play previous song
+                            player.stop();
+                            if(selectedSongIndex > 0) {
+                                selectedSongIndex--;
+                            }
+                            player.play(getSongFilenameByIndex(selectedSongIndex));
                         }
-                        player.play(getSongFilenameByIndex(selectedSongIndex));
                     }
                 }
             });
@@ -233,19 +273,23 @@ public class GUI extends JFrame{
                 public void actionPerformed(ActionEvent e) {
                     System.out.println("song index: " + selectedSongIndex);
                     if(selectedSongIndex < libTable.getRowCount() - 1) {
-                        // stop current song
-                        // decriment selectedSongIndex
-                        // play next song
-                        player.stop();
-                        selectedSongIndex++;
-                        player.play(getSongFilenameByIndex(selectedSongIndex));
+                        if(player.getState() == 2 || player.getState() == 5) {
+                            // if player is currently playing/resumed
+                            // stop current song
+                            // decriment selectedSongIndex
+                            // play next song
+                            player.stop();
+                            selectedSongIndex++;
+                            player.play(getSongFilenameByIndex(selectedSongIndex));
+                        }
                     }
                 }
             });
 
             // Add buttons to buttonPanel
             buttonPanel.add(previousButton);
-            buttonPanel.add(togglePlayButton);
+            buttonPanel.add(playButton);
+            buttonPanel.add(pauseButton);
             buttonPanel.add(stopButton);
             buttonPanel.add(nextButton);
 
@@ -334,7 +378,6 @@ public class GUI extends JFrame{
                 model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
                         selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
                 player.play(selectedSong.getFilePath());
-                togglePlayButton.setIcon(pauseIcon);
             }
         }
     }
@@ -387,10 +430,6 @@ public class GUI extends JFrame{
 
             // Stop player if song being deleted is the current song on the player
             if(getSongFilenameByIndex(row).equals(player.getCurrentSong())) {
-                if(player.getState() == 2) {
-                    // if state == playing, toggle pause/play icon to play
-                    togglePlayButton.setIcon(playIcon);
-                }
                 player.stop();
             }
 
