@@ -4,7 +4,6 @@ import javazoom.jlgui.basicplayer.BasicPlayerEvent;
 import javazoom.jlgui.basicplayer.BasicPlayerListener;
 
 import java.io.File;
-
 import java.util.Map;
 
 /**
@@ -15,7 +14,7 @@ import java.util.Map;
  */
 public class MusicPlayer implements BasicPlayerListener {
 
-    /**
+    /*
      * Indicates the player state
      * <p>
      * State Codes:
@@ -29,12 +28,31 @@ public class MusicPlayer implements BasicPlayerListener {
      *
      */
     private int state;
+    /*
+     * Stores the filepath of the
+     * song currently loaded to the player
+     */
     private String currentSong;
+    /*
+     * Stores the index of the
+     * song currently loaded to the player
+     */
+    private int currentSongIndex;
+    /*
+     * Stores the filepath of the
+     * currently selected song in the library
+     */
+    private String selectedSong;
+    /*
+     * Stores the library index of the
+     * currently selected song in the library
+     */
+    private int selectedSongIndex;
     private BasicPlayer player;
     private BasicController controller;
 
     /**
-     * MusicPlayer constructor, instantiates the persistent BasicPlayer object
+     * MusicPlayer default constructor, instantiates the persistent BasicPlayer object
      *
      */
     public MusicPlayer() {
@@ -44,16 +62,20 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
-     * Plays the given song
+     * Plays the selected song
      *
-     * @param filePath the file path of the song to play
      * @return true if song plays successfully
      */
-    public boolean play(String filePath) {
+    public boolean play() {
         try {
-            controller.open(new File(filePath));
+            controller.open(new File(getCurrentSong()));
+            if (state == 2 || state == 5 || state == 4) {
+                // player.state == playing/resumed/paused
+                // stop player
+                controller.stop();
+            }
+            // play loaded song
             controller.play();
-            setCurrentSong(filePath);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,7 +105,10 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public boolean pause() {
         try {
-            controller.pause();
+            if(state == 2 || state == 5) {
+                // player.state == playing/resumed
+                controller.pause();
+            }
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,21 +132,75 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
-     * Gets the current song filename
+     * Gets the selected songs file path
      *
-     * @return the current song's filename
+     * @return the selected song file path
+     */
+    public String getSelectedSong() {
+        return selectedSong;
+    }
+
+    /**
+     * Sets the selected songs file path
+     *
+     * @param filePath the selected song file path
+     */
+    public void setSelectedSong(String filePath) {
+        selectedSong = filePath;
+    }
+
+    /**
+     * Gets the selected songs index
+     *
+     * @return the selected song index
+     */
+    public int getSelectedSongIndex() {
+        return selectedSongIndex;
+    }
+
+    /**
+     * Sets the selected songs index
+     *
+     * @param index the selected song index
+     */
+    public void setSelectedSongIndex(int index) {
+        selectedSongIndex = index;
+    }
+
+    /**
+     * Gets the currently loaded song filename
+     *
+     * @return the currently loaded song's filename
      */
     public String getCurrentSong() {
         return currentSong;
     }
 
     /**
-     * Sets the current song filename
+     * Sets the currently loaded song filename
      *
-     * @param currentSong the current song (filename) to set
+     * @param currentSong the currently loaded song (filename) to set
      */
     public void setCurrentSong(String currentSong) {
         this.currentSong = currentSong;
+    }
+
+    /**
+     * Gets the currently loaded songs index
+     *
+     * @return the currently loaded song index
+     */
+    public int getCurrentSongIndex() {
+        return currentSongIndex;
+    }
+
+    /**
+     * Sets the currently loaded songs index
+     *
+     * @param index the currently loaded song index
+     */
+    public void setCurrentSongIndex(int index) {
+        currentSongIndex = index;
     }
 
     /**

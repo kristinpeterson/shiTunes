@@ -14,7 +14,8 @@ public class MusicPlayerTests {
 
     @Test
     public void testA_Play() {
-        player.play(song.getFilePath());
+        player.setCurrentSong(song.getFilePath());
+        player.play();
     }
 
     @Test

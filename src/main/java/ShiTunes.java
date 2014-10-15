@@ -11,11 +11,8 @@ public class ShiTunes {
         ShiBase db = new ShiBase();
         db.connect();
 
-        // Initialize persistent MusicPlayer
-        MusicPlayer player = new MusicPlayer();
-
         // Init GUI
-        GUI gui = new GUI(db, player);
+        GUI gui = new GUI(db);
 
         // Display GUI once initialized
         gui.displayGUI();

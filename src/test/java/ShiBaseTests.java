@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ShiBaseTests {
 
-    Song song = new Song(System.getProperty("user.dir") + "/mp3/" + "test.mp3");
+    Song song = new Song(getClass().getResource("/mp3/test.mp3").getPath());
     ShiBase db= new ShiBase();
 
     @Test

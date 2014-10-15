@@ -10,10 +10,9 @@ public class SongTests {
 
     @Test
     public void testSongDefaultConstructor() {
-        String music_dir = System.getProperty("user.dir") + "/mp3/";
-        String music_file = "1.mp3";
-        Song song = new Song(music_dir + music_file);
+        String path = getClass().getResource("/mp3/test.mp3").getPath();
+        Song song = new Song(path);
 
-        assertEquals(music_dir + music_file, song.getFilePath());
+        assertEquals(path, song.getFilePath());
     }
 }

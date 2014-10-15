@@ -7,7 +7,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
@@ -24,9 +23,8 @@ import java.util.List;
  */
 public class GUI extends JFrame{
 
-    private MusicPlayer player;
+    final private MusicPlayer player = new MusicPlayer();
     private ShiBase db;
-    private int selectedSongIndex;
 
     // GUI Frame and contents
     private JFrame shiTunesFrame;
@@ -68,20 +66,17 @@ public class GUI extends JFrame{
      * Main Menu and buttons (previous, play/pause, stop, next)
      *
      */
-    public GUI(ShiBase db, MusicPlayer player) {
+    public GUI(ShiBase db) {
         // assign db arg to GUI db object
         this.db = db;
 
-        // TODO: REMOVE loadDummyData() IN PRODUCTION CODE? (or keep it for demo)
-        loadDummyData();
-
-        // assign player arg to GUI player object
-        this.player = player;
+        /* TODO: REMOVE loadDummyData() IN PRODUCTION CODE? (or keep it for demo)
+        loadDummyData(); */
 
         // GUI initialization
         shiTunesFrame = new JFrame();
         shiTunesFrame.setTitle("shiTunes");
-        shiTunesFrame.setMinimumSize(new Dimension(900,600));
+        shiTunesFrame.setMinimumSize(new Dimension(900, 600));
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
@@ -95,12 +90,9 @@ public class GUI extends JFrame{
         menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
 
-
-
         // Build library table
-        // instance library table model - this prevents individual cells from being editable
+        // Instantiate library table model - this prevents individual cells from being editable
         DefaultTableModel tableModel = new DefaultTableModel(db.getAllSongs(), ShiBase.MUSIC_COLUMNS) {
-
             @Override
             public boolean isCellEditable(int row, int column) {
                 //all cells false
@@ -134,9 +126,7 @@ public class GUI extends JFrame{
                         Song song = new Song(fileList.get(i).toString());
                         addSongToLibrary(song);
                     }
-                } catch (UnsupportedFlavorException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -148,16 +138,18 @@ public class GUI extends JFrame{
         // Setup Library table listener for selected row
         libTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
             public void valueChanged(ListSelectionEvent event) {
-                // Store selected song row index for use in skipping and getting selected song
-                selectedSongIndex = libTable.getSelectedRow();
+                // set the currently selected row as the selected song
+                setSelectedSong(libTable.getSelectedRow());
             }
         });
 
-
+        // Set double click listener to play selected song.
         libTable.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent me) {
                 if (me.getClickCount() == 2) {
-                    playSong();
+                    // set selected song as currently loaded song for the player
+                    setCurrentSong(libTable.getSelectedRow());
+                    player.play();
                 }
             }
         });
@@ -219,74 +211,19 @@ public class GUI extends JFrame{
             nextButton.setPreferredSize(new Dimension(40, 40));
 
             // Set action listener for play button
-            playButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                        playSong();
-                }
-            });
+            playButton.addActionListener(new PlayListener());
 
             // Set action listener for pause button
-            pauseButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.out.println("song index: " + selectedSongIndex);
-                    System.out.println("getsongiflenamebyindex(selectedsongindex)" + getSongFilenameByIndex(selectedSongIndex));
-                    if(getSongFilenameByIndex(selectedSongIndex) != null
-                            && !getSongFilenameByIndex(selectedSongIndex).isEmpty()) {
-                        if(player.getState() == 2 || player.getState() == 5) {
-                            // player.state == playing/resumed
-                            player.pause();
-                        }
-                    }
-                }
-            });
+            pauseButton.addActionListener(new PauseListener());
 
             // Set action listener for stop button
-            stopButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.out.println("song index: " + selectedSongIndex);
-                    player.stop();
-                }
-            });
+            stopButton.addActionListener(new StopListener());
 
             // Set action listener for previous button
-            previousButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.out.println("song index: " + selectedSongIndex);
-                    if(selectedSongIndex == 0) {
-                        // at top of libTable, do nothing
-                    } else {
-                        if(player.getState() == 2 || player.getState() == 5) {
-                            // if player is currently playing/resumed
-                            // stop current song
-                            // decriment selectedSongIndex
-                            // play previous song
-                            player.stop();
-                            if(selectedSongIndex > 0) {
-                                selectedSongIndex--;
-                            }
-                            player.play(getSongFilenameByIndex(selectedSongIndex));
-                        }
-                    }
-                }
-            });
+            previousButton.addActionListener(new PreviousListener());
 
             // Set action listener for next button
-            nextButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.out.println("song index: " + selectedSongIndex);
-                    if(selectedSongIndex < libTable.getRowCount() - 1) {
-                        if(player.getState() == 2 || player.getState() == 5) {
-                            // if player is currently playing/resumed
-                            // stop current song
-                            // decriment selectedSongIndex
-                            // play next song
-                            player.stop();
-                            selectedSongIndex++;
-                            player.play(getSongFilenameByIndex(selectedSongIndex));
-                        }
-                    }
-                }
-            });
+            nextButton.addActionListener(new NextListener());
 
             // Add buttons to buttonPanel
             buttonPanel.add(previousButton);
@@ -303,75 +240,11 @@ public class GUI extends JFrame{
     }
 
     /**
-     * Plays the selected song
-     */
-    private void playSong() {
-        String songFilePath = getSongFilenameByIndex(selectedSongIndex);
-        boolean selectedSongExists = songFilePath != null && !songFilePath.isEmpty();
-        boolean selectedSongIsCurrent = getSongFilenameByIndex(selectedSongIndex).equals(player.getCurrentSong());
-        int playerState = player.getState();
-
-        if (selectedSongExists) {
-            // if there is a selected song
-            if (selectedSongIsCurrent && playerState == 4) {
-                // if selected song is current song on player
-                // and player.state == paused
-                player.resume();
-            } else if (playerState == 3 || playerState == 0) {
-                // otherwise, play selected song
-                // if player.state == stopped
-                // or player.state == opening (initial state before any song has played)
-                player.play(songFilePath);
-            } else if (!selectedSongIsCurrent) {
-                player.stop();
-                player.play(songFilePath);
-            } else if (playerState == 2 || playerState == 5) {
-                // player.state == playing/resumed
-                // stop and then play song from beginning
-                player.stop();
-                player.play(songFilePath);
-            }
-        }
-    }
-
-    /**
-     * Adds the given song to the library list and database
-     *
-     * @param song the song to add to the library/database
-     */
-    private void addSongToLibrary(Song song) {
-        if(db.insertSong(song)) {
-            // insert song was successful
-            // Add row to JTable
-            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
-            model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
-                    song.getYear(), song.getGenre(), song.getFilePath()});
-
-        } else {
-            // TODO: display something that tells the user the song isn't being added
-        }
-    }
-
-    /**
-     * Gets the song filename based on song library index
-     *
-     * @return the song filename based on song library index
-     */
-    private String getSongFilenameByIndex(int index) {
-        // Ensure index is within bounds
-        if(index >= 0 && index < libTable.getRowCount()) {
-            return libTable.getValueAt(index, 5).toString();
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Creates shiTunes file menu
      *
      * @return the shiTunes file menu
      */
-    public JMenu createFileMenu() {
+    private JMenu createFileMenu() {
         JMenu menu = new JMenu("File");
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem addItem = new JMenuItem("Add Song");
@@ -395,6 +268,196 @@ public class GUI extends JFrame{
         return menu;
     }
 
+    /**
+     * Initializes popup menu for file addition/deletion
+     * <p>
+     * When user right clicks anywhere on JTable
+     * menu items for delete and add popup.
+     *
+     *
+     */
+    private void createPopupMenu() {
+        popup = new JPopupMenu();
+
+        JMenuItem popupAdd = new JMenuItem("Add Song");
+        JMenuItem popupDelete = new JMenuItem("Delete Song");
+        ActionListener addListener = new AddItemListener();
+        ActionListener deleteListener = new DeleteItemListener();
+        popupAdd.addActionListener(addListener);
+        popupDelete.addActionListener(deleteListener);
+
+        MouseListener popupListen = new PopupListener();
+        libTable.addMouseListener(popupListen);
+
+        popup.add(popupAdd);
+        popup.add(popupDelete);
+    }
+
+    /* Song/Library helper methods */
+
+    /**
+     * Adds the given song to the library list and database
+     *
+     * @param song the song to add to the library/database
+     */
+    private void addSongToLibrary(Song song) {
+        if(db.insertSong(song)) {
+            // insert song was successful
+            // Add row to JTable
+            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+            model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
+                    song.getYear(), song.getGenre(), song.getFilePath()});
+        } else {
+            // TODO: display something that tells the user the song isn't being added
+        }
+    }
+
+    /**
+     * Sets the music players selected song index and filepath
+     * based on the selected library table row
+     *
+     * @param index the index of the selected song
+     */
+    private void setSelectedSong(int index) {
+        player.setSelectedSongIndex(index);
+        if(index > 0) {
+            player.setSelectedSong(libTable.getValueAt(index, 5).toString());
+        } else {
+            player.setSelectedSong(null);
+        }
+    }
+
+    /**
+     * Sets the music players currently loaded song index and filepath
+     *
+     * @param index the index of the song currently loaded to the player
+     */
+    private void setCurrentSong(int index) {
+        player.setCurrentSongIndex(index);
+        player.setCurrentSong(libTable.getValueAt(index, 5).toString());
+    }
+
+    /**
+     * Checks if a song is already listed in the library table
+     *
+     * @param filePath the filepath of the song being searched for
+     * @return true if the song exists in the library table
+     */
+    private boolean songExistsInLibraryTable(String filePath) {
+        for(int i = 0; i < libTable.getRowCount(); i++) {
+            if(filePath.equals(libTable.getValueAt(i, 5))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /* LISTENERS */
+
+    /**
+     * A listener for the Previous Song action
+     */
+    class PreviousListener implements ActionListener {
+        /**
+         * If player state is currently playing/resumed
+         * stop the current song, decrement the song index
+         * and play the previous song
+         *
+         * @param e the ActionEvent object for this event
+         */
+        public void actionPerformed(ActionEvent e) {
+            if(player.getCurrentSongIndex() != 0) {
+                // if not at top of library, skip previous, otherwise do nothing
+                if(player.getState() == 2 || player.getState() == 5) {
+                    // if player is currently playing/resumed
+                    // stop current song
+                    // decrement player.currentSongIndex
+                    // play previous song
+                    player.stop();
+                    if(player.getCurrentSongIndex() > 0) {
+                        setCurrentSong(player.getCurrentSongIndex() - 1);
+                    }
+                    player.play();
+                }
+            }
+        }
+    }
+
+    /**
+     * A listener for the Play Song action
+     */
+    class PlayListener implements ActionListener {
+        /**
+         * Calls the MusicPlayer play function when event occurs
+         *
+         * @param e the ActionEvent object for this event
+         */
+        public void actionPerformed(ActionEvent e) {
+            boolean selectedSongIsCurrent = player.getSelectedSong().equals(player.getCurrentSong());
+            if (selectedSongIsCurrent && player.getState() == 4) {
+                // if selected song is current song on player
+                // and player.state == paused
+                player.resume();
+            } else {
+                setCurrentSong(libTable.getSelectedRow());
+                player.play();
+            }
+        }
+    }
+
+    /**
+     * A listener for the Pause Song action
+     */
+    class PauseListener implements ActionListener {
+        /**
+         * Calls the MusicPlayer pause function when event occurs
+         *
+         * @param e the ActionEvent object for this event
+         */
+        public void actionPerformed(ActionEvent e) {
+            player.pause();
+        }
+    }
+
+    /**
+     * A listener for the Stop Song action
+     */
+    class StopListener implements ActionListener {
+        /**
+         * Calls the MusicPlayer stop function when event occurs
+         *
+         * @param e the ActionEvent object for this event
+         */
+        public void actionPerformed(ActionEvent e) {
+            player.stop();
+        }
+    }
+
+    /**
+     * A listener for the Next Song action
+     */
+    class NextListener implements ActionListener {
+        /**
+         * If player state is currently playing/resumed
+         * stop the current song, increment the song index
+         * and play the next song
+         *
+         * @param e the ActionEvent object for this event
+         */
+        public void actionPerformed(ActionEvent e) {
+             if(player.getCurrentSongIndex() < libTable.getRowCount() - 1) {
+                if(player.getState() == 2 || player.getState() == 5) {
+                    // if player is currently playing/resumed
+                    // stop current song
+                    // decriment player.currentSongIndex
+                    // play next song
+                    player.stop();
+                    setCurrentSong(player.getCurrentSongIndex() + 1);
+                    player.play();
+                }
+            }
+        }
+    }
     /**
      * Exit item listener for the Main Menu.
      * <p>
@@ -423,14 +486,18 @@ public class GUI extends JFrame{
         public void actionPerformed(ActionEvent event) {
             chooser.setFileFilter(filter);  //filters for mp3 files only
             //file chooser menu
-            if (chooser.showOpenDialog(shiTunesFrame) == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showDialog(shiTunesFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                DefaultTableModel model = (DefaultTableModel) libTable.getModel();
-                model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
-                        selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
-                selectedSongIndex = model.getRowCount() - 1;
-                player.play(selectedSong.getFilePath());
+                if(!songExistsInLibraryTable(selectedSong.getFilePath())) {
+                    DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+                    model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
+                            selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
+                    setCurrentSong(model.getRowCount() - 1);
+                    player.play();
+                } else {
+                    // TODO: display something that tells the user the song isn't being opened
+                }
             }
         }
     }
@@ -447,7 +514,7 @@ public class GUI extends JFrame{
         public void actionPerformed(ActionEvent event) {
             chooser.setFileFilter(filter);  //filters for mp3 files only
             //file chooser menu
-            if (chooser.showOpenDialog(shiTunesFrame) == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showDialog(shiTunesFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
                 addSongToLibrary(selectedSong);
@@ -466,46 +533,21 @@ public class GUI extends JFrame{
     class DeleteItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
 
-            // Get selected row to be deleted
+            // Get row and filename of selected song to be deleted
             int row = libTable.getSelectedRow();
+            String selectedSong = libTable.getValueAt(row, 5).toString();
 
             // Stop player if song being deleted is the current song on the player
-            if(getSongFilenameByIndex(row).equals(player.getCurrentSong())) {
+            if(selectedSong.equals(player.getCurrentSong())) {
                 player.stop();
             }
 
             DefaultTableModel model = (DefaultTableModel) libTable.getModel();
-            String selected = model.getValueAt(row, 5).toString();  // filepath of song @row
             model.removeRow(row);
 
             //Delete song from database by using filepath as an identifier
-            db.deleteSong(selected);
+            db.deleteSong(selectedSong);
         }
-    }
-
-    /**
-     * Initializes popup menu for file addition/deletion
-     * <p>
-     * When user right clicks anywhere on JTable
-     * menu items for delete and add popup.
-     *
-     *
-     */
-    private void createPopupMenu() {
-        popup = new JPopupMenu();
-
-        JMenuItem popupAdd = new JMenuItem("Add Song");
-        JMenuItem popupDelete = new JMenuItem("Delete Song");
-        ActionListener addListener = new AddItemListener();
-        ActionListener deleteListener = new DeleteItemListener();
-        popupAdd.addActionListener(addListener);
-        popupDelete.addActionListener(deleteListener);
-
-        MouseListener popupListen = new PopupListener();
-        libTable.addMouseListener(popupListen);
-
-        popup.add(popupAdd);
-        popup.add(popupDelete);
     }
 
     /**
@@ -517,9 +559,12 @@ public class GUI extends JFrame{
      *
      */
     class PopupListener extends MouseAdapter {
+        @Override
         public void mousePressed(MouseEvent e) {
             maybeShowPopup(e);
         }
+
+        @Override
         public void mouseReleased(MouseEvent e) {
             maybeShowPopup(e);
         }
@@ -531,7 +576,7 @@ public class GUI extends JFrame{
         }
     }
 
-    /* TODO: Delete this in production code */
+    /* TODO: Delete this in production code
     private void loadDummyData() {
         String music_dir = getClass().getResource("/mp3/").getPath();
         Song song = new Song(music_dir + "1.mp3");
@@ -542,5 +587,5 @@ public class GUI extends JFrame{
         db.insertSong(song);
         song = new Song(music_dir + "4.mp3");
         db.insertSong(song);
-    }
+    }*/
 }

@@ -97,7 +97,8 @@ public class ShiBase {
             ResultSet rs = dbmd.getTables(null, "APP", MUSIC_TABLE, null);
             if(!rs.next()) {
                 String query = "CREATE TABLE " + MUSIC_TABLE +
-                        " (filePath VARCHAR(200) NOT NULL, " +
+                        " (id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)," +
+                        "filePath VARCHAR(200) NOT NULL, " +
                         "artist VARCHAR(100), " +
                         "title VARCHAR(150), " +
                         "album VARCHAR(150), " +
@@ -174,7 +175,7 @@ public class ShiBase {
     /**
      * Checks if song exists in database
      *
-     * @param filepath the filepath of the song to look for in the database
+     * @param filePath the filepath of the song to look for in the database
      * @return true if the song exists in the database
      */
     public boolean songExists(String filePath) {
@@ -211,7 +212,7 @@ public class ShiBase {
     public boolean deleteSong(String filePath) {
         if(songExists(filePath)) {
             try {
-                String query = "DELETE FROM " + MUSIC_TABLE + " WHERE filePath=?";
+                String query = "DELETE FROM " + MUSIC_TABLE + " WHERE filepath=?";
                 stmt = conn.prepareStatement(query);
                 stmt.setString(1, filePath);
                 stmt.execute();

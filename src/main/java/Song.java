@@ -44,9 +44,9 @@ public class Song {
                 this.genre = id3v2Tag.getGenreDescription();
             }
         } catch (IOException ioe) {
-            System.out.println("IOException occurred");
+            System.out.println("Song.java: IOException occurred");
         } catch (Exception e) {
-            System.out.println("An exception occurred while getting Song tag information");
+            System.out.println("Song.java: An exception occurred while getting Song tag information");
         }
     }
 

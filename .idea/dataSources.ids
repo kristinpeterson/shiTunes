@@ -17,14 +17,7 @@
     <schema name="SYSPROC" catalog=""/>
     <schema name="SYSSTAT" catalog=""/>
     <table name="MUSIC" schema="APP" catalog="" type="TABLE">
-      <column name="FILEPATH" sqlType="VARCHAR" precision="200" scale="0" nullable="false" jdbcType="12"/>
-      <column name="ARTIST" sqlType="VARCHAR" precision="100" scale="0" nullable="true" jdbcType="12"/>
-      <column name="TITLE" sqlType="VARCHAR" precision="150" scale="0" nullable="true" jdbcType="12"/>
-      <column name="ALBUM" sqlType="VARCHAR" precision="150" scale="0" nullable="true" jdbcType="12"/>
-      <column name="YEAR_RELEASED" sqlType="VARCHAR" precision="4" scale="0" nullable="true" jdbcType="12"/>
-      <column name="GENRE" sqlType="VARCHAR" precision="20" scale="0" nullable="true" jdbcType="12"/>
-    </table>
-    <table name="TEST" schema="APP" catalog="" type="TABLE">
+      <column name="ID" sqlType="INTEGER" precision="10" scale="0" nullable="false" jdbcType="4" def="QVVUT0lOQ1JFTUVOVDogc3RhcnQgMSBpbmNyZW1lbnQgMQ==" autoIncrement="true"/>
       <column name="FILEPATH" sqlType="VARCHAR" precision="200" scale="0" nullable="false" jdbcType="12"/>
       <column name="ARTIST" sqlType="VARCHAR" precision="100" scale="0" nullable="true" jdbcType="12"/>
       <column name="TITLE" sqlType="VARCHAR" precision="150" scale="0" nullable="true" jdbcType="12"/>
