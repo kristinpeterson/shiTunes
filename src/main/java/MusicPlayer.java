@@ -28,26 +28,8 @@ public class MusicPlayer implements BasicPlayerListener {
      *
      */
     private int state;
-    /*
-     * Stores the filepath of the
-     * song currently loaded to the player
-     */
-    private String currentSong;
-    /*
-     * Stores the index of the
-     * song currently loaded to the player
-     */
-    private int currentSongIndex;
-    /*
-     * Stores the filepath of the
-     * currently selected song in the library
-     */
-    private String selectedSong;
-    /*
-     * Stores the library index of the
-     * currently selected song in the library
-     */
-    private int selectedSongIndex;
+    private String loadedSong;
+    private int loadedSongIndex;
     private BasicPlayer player;
     private BasicController controller;
 
@@ -68,7 +50,7 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public boolean play() {
         try {
-            controller.open(new File(getCurrentSong()));
+            controller.open(new File(getLoadedSong()));
             if (state == 2 || state == 5 || state == 4) {
                 // player.state == playing/resumed/paused
                 // stop player
@@ -132,57 +114,12 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
-     * Gets the selected songs file path
-     *
-     * @return the selected song file path
-     */
-    public String getSelectedSong() {
-        return selectedSong;
-    }
-
-    /**
-     * Sets the selected songs file path
-     *
-     * @param filePath the selected song file path
-     */
-    public void setSelectedSong(String filePath) {
-        selectedSong = filePath;
-    }
-
-    /**
-     * Gets the selected songs index
-     *
-     * @return the selected song index
-     */
-    public int getSelectedSongIndex() {
-        return selectedSongIndex;
-    }
-
-    /**
-     * Sets the selected songs index
-     *
-     * @param index the selected song index
-     */
-    public void setSelectedSongIndex(int index) {
-        selectedSongIndex = index;
-    }
-
-    /**
      * Gets the currently loaded song filename
      *
      * @return the currently loaded song's filename
      */
-    public String getCurrentSong() {
-        return currentSong;
-    }
-
-    /**
-     * Sets the currently loaded song filename
-     *
-     * @param currentSong the currently loaded song (filename) to set
-     */
-    public void setCurrentSong(String currentSong) {
-        this.currentSong = currentSong;
+    public String getLoadedSong() {
+        return loadedSong;
     }
 
     /**
@@ -190,17 +127,20 @@ public class MusicPlayer implements BasicPlayerListener {
      *
      * @return the currently loaded song index
      */
-    public int getCurrentSongIndex() {
-        return currentSongIndex;
+    public int getLoadedSongIndex() {
+        return loadedSongIndex;
     }
 
     /**
-     * Sets the currently loaded songs index
+     * Sets the currently loaded song using it's MusicLibrary index
      *
-     * @param index the currently loaded song index
+     * @param index the index of the song being loaded
      */
-    public void setCurrentSongIndex(int index) {
-        currentSongIndex = index;
+    public void setLoadedSong(int index) {
+        if(index >= 0) {
+            this.loadedSong = ShiTunes.library.getTable().getValueAt(index, 5).toString();
+            this.loadedSongIndex = index;
+        }
     }
 
     /**

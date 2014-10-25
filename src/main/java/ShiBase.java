@@ -1,8 +1,8 @@
 import java.sql.*;
 
 /**
- * The ShiBase class contains methods for interacting
- * with the shiTunes database
+ * The ShiBase class contains methods for connecting to
+ * and interacting with the shiTunes database
  *
  * @author shiTunes inc.
  */

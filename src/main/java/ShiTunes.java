@@ -5,17 +5,24 @@
  * @author shiTunes inc.
  */
 public class ShiTunes {
-    public static void main(String[] args) {
+    static MusicPlayer player;
+    static ShiBase db;
+    static MusicLibrary library;
 
-        // Initialize and Connect to ShiBase database
-        ShiBase db = new ShiBase();
+    static {
+        player = new MusicPlayer();
+        db = new ShiBase();
+        library = new MusicLibrary();
+    }
+
+    public static void main(String[] args) {
+        // Connect to ShiBase
         db.connect();
 
         // Init GUI
-        GUI gui = new GUI(db);
+        GUI gui = new GUI();
 
         // Display GUI once initialized
         gui.displayGUI();
-
     }
 }

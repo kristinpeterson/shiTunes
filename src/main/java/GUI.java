@@ -23,38 +23,9 @@ import java.util.List;
  */
 public class GUI extends JFrame{
 
-    final private MusicPlayer player = new MusicPlayer();
-    private ShiBase db;
-
-    // GUI Frame and contents
     private JFrame shiTunesFrame;
     private JPanel buttonPanel;
-    private JTable libTable;
-    JPanel mainPanel;
-    JMenuBar menuBar;
-    JPanel libraryPanel;
-    JPopupMenu popup;
-
-    // UI Components
-    BufferedImage playResource;
-    BufferedImage pauseResource;
-    BufferedImage stopResource;
-    BufferedImage previousResource;
-    BufferedImage nextResource;
-
-    ImageIcon stopIcon;
-    ImageIcon pauseIcon;
-    ImageIcon playIcon;
-    ImageIcon previousIcon;
-    ImageIcon nextIcon;
-
-    JButton playButton;
-    JButton pauseButton;
-    JButton stopButton;
-    JButton previousButton;
-    JButton nextButton;
-
-    // File Chooser
+    private JPopupMenu popup;
     private JFileChooser chooser = new JFileChooser();
     private static FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
 
@@ -66,50 +37,47 @@ public class GUI extends JFrame{
      * Main Menu and buttons (previous, play/pause, stop, next)
      *
      */
-    public GUI(ShiBase db) {
-        // assign db arg to GUI db object
-        this.db = db;
+    public GUI() {
 
-        /* TODO: REMOVE loadDummyData() IN PRODUCTION CODE? (or keep it for demo)
-        loadDummyData(); */
-
-        // GUI initialization
         shiTunesFrame = new JFrame();
         shiTunesFrame.setTitle("shiTunes");
         shiTunesFrame.setMinimumSize(new Dimension(900, 600));
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-        // Panel initialization
-        mainPanel = new JPanel();
+        JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         buttonPanel = new JPanel();
-        libraryPanel = new JPanel(new GridLayout(1,1));
-
-        // Menu bar initialization
-        menuBar = new JMenuBar();
+        JPanel libraryPanel = new JPanel(new GridLayout(1, 1));
+        JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
-
-        // Build library table
-        // Instantiate library table model - this prevents individual cells from being editable
-        DefaultTableModel tableModel = new DefaultTableModel(db.getAllSongs(), ShiBase.MUSIC_COLUMNS) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                //all cells false
-                return false;
-            }
-        };
-
-        // Instantiate library table based off table model
-        libTable = new JTable(tableModel);
 
         //Popup menu initialization
         createPopupMenu();
 
         // Instantiate scroll pane for library
-        JScrollPane scrollPane = new JScrollPane(libTable);
-        libTable.setPreferredScrollableViewportSize(new Dimension(500, 200));
-        libTable.setFillsViewportHeight(true);
+        JScrollPane scrollPane = new JScrollPane(ShiTunes.library.getTable());
+        ShiTunes.library.getTable().setPreferredScrollableViewportSize(new Dimension(500, 200));
+        ShiTunes.library.getTable().setFillsViewportHeight(true);
+
+        // Setup Library table listener for selected row
+        ShiTunes.library.getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            public void valueChanged(ListSelectionEvent event) {
+                // set the currently selected row as the selected song
+                ShiTunes.library.setSelectedSong(ShiTunes.library.getTable().getSelectedRow());
+            }
+        });
+
+        // Set double click listener to play selected song.
+        ShiTunes.library.getTable().addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent me) {
+                if (me.getClickCount() == 2) {
+                    // set selected song as currently loaded song for the player
+                    System.out.println("selected row index: " + ShiTunes.library.getTable().getSelectedRow());
+                    ShiTunes.player.setLoadedSong(ShiTunes.library.getTable().getSelectedRow());
+                    ShiTunes.player.play();
+                }
+            }
+        });
 
         // Set drop target on scroll table
         // enabling drag and drop of files into library
@@ -124,7 +92,7 @@ public class GUI extends JFrame{
                     fileList = (List) t.getTransferData(DataFlavor.javaFileListFlavor);
                     for(int i = 0; i < fileList.size(); i++) {
                         Song song = new Song(fileList.get(i).toString());
-                        addSongToLibrary(song);
+                        ShiTunes.library.addSongToLibrary(song);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -134,25 +102,6 @@ public class GUI extends JFrame{
 
         // Add scroll pane (library table) to library panel
         libraryPanel.add(scrollPane);
-
-        // Setup Library table listener for selected row
-        libTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-            public void valueChanged(ListSelectionEvent event) {
-                // set the currently selected row as the selected song
-                setSelectedSong(libTable.getSelectedRow());
-            }
-        });
-
-        // Set double click listener to play selected song.
-        libTable.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent me) {
-                if (me.getClickCount() == 2) {
-                    // set selected song as currently loaded song for the player
-                    setCurrentSong(libTable.getSelectedRow());
-                    player.play();
-                }
-            }
-        });
 
         // Add UI components (buttons)
         addUIComponents();
@@ -184,24 +133,24 @@ public class GUI extends JFrame{
     private void addUIComponents() {
         try {
             // Initialize resources
-            playResource = ImageIO.read(getClass().getResourceAsStream("/images/play.png"));
-            pauseResource = ImageIO.read(getClass().getResourceAsStream("/images/pause.png"));
-            stopResource = ImageIO.read(getClass().getResourceAsStream("/images/stop.png"));
-            previousResource = ImageIO.read(getClass().getResourceAsStream("/images/previous.png"));
-            nextResource = ImageIO.read(getClass().getResourceAsStream("/images/next.png"));
-            stopIcon = new ImageIcon(stopResource);
-            pauseIcon = new ImageIcon(pauseResource);
-            playIcon = new ImageIcon(playResource);
-            previousIcon = new ImageIcon(previousResource);
-            nextIcon = new ImageIcon(nextResource);
+            BufferedImage playResource = ImageIO.read(getClass().getResourceAsStream("/images/play.png"));
+            BufferedImage pauseResource = ImageIO.read(getClass().getResourceAsStream("/images/pause.png"));
+            BufferedImage stopResource = ImageIO.read(getClass().getResourceAsStream("/images/stop.png"));
+            BufferedImage previousResource = ImageIO.read(getClass().getResourceAsStream("/images/previous.png"));
+            BufferedImage nextResource = ImageIO.read(getClass().getResourceAsStream("/images/next.png"));
+            ImageIcon stopIcon = new ImageIcon(stopResource);
+            ImageIcon pauseIcon = new ImageIcon(pauseResource);
+            ImageIcon playIcon = new ImageIcon(playResource);
+            ImageIcon previousIcon = new ImageIcon(previousResource);
+            ImageIcon nextIcon = new ImageIcon(nextResource);
 
             // Initialize buttons (toggle play/pause, stop, previous, next)
             // Setting icon during intialization
-            playButton = new JButton(playIcon);
-            pauseButton = new JButton(pauseIcon);
-            stopButton = new JButton(stopIcon);
-            previousButton = new JButton(previousIcon);
-            nextButton = new JButton(nextIcon);
+            JButton playButton = new JButton(playIcon);
+            JButton pauseButton = new JButton(pauseIcon);
+            JButton stopButton = new JButton(stopIcon);
+            JButton previousButton = new JButton(previousIcon);
+            JButton nextButton = new JButton(nextIcon);
 
             // Set preferred button size
             playButton.setPreferredSize(new Dimension(40, 40));
@@ -273,8 +222,6 @@ public class GUI extends JFrame{
      * <p>
      * When user right clicks anywhere on JTable
      * menu items for delete and add popup.
-     *
-     *
      */
     private void createPopupMenu() {
         popup = new JPopupMenu();
@@ -287,72 +234,11 @@ public class GUI extends JFrame{
         popupDelete.addActionListener(deleteListener);
 
         MouseListener popupListen = new PopupListener();
-        libTable.addMouseListener(popupListen);
+        ShiTunes.library.getTable().addMouseListener(popupListen);
 
         popup.add(popupAdd);
         popup.add(popupDelete);
     }
-
-    /* Song/Library helper methods */
-
-    /**
-     * Adds the given song to the library list and database
-     *
-     * @param song the song to add to the library/database
-     */
-    private void addSongToLibrary(Song song) {
-        if(db.insertSong(song)) {
-            // insert song was successful
-            // Add row to JTable
-            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
-            model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
-                    song.getYear(), song.getGenre(), song.getFilePath()});
-        } else {
-            // TODO: display something that tells the user the song isn't being added
-        }
-    }
-
-    /**
-     * Sets the music players selected song index and filepath
-     * based on the selected library table row
-     *
-     * @param index the index of the selected song
-     */
-    private void setSelectedSong(int index) {
-        player.setSelectedSongIndex(index);
-        if(index > 0) {
-            player.setSelectedSong(libTable.getValueAt(index, 5).toString());
-        } else {
-            player.setSelectedSong(null);
-        }
-    }
-
-    /**
-     * Sets the music players currently loaded song index and filepath
-     *
-     * @param index the index of the song currently loaded to the player
-     */
-    private void setCurrentSong(int index) {
-        player.setCurrentSongIndex(index);
-        player.setCurrentSong(libTable.getValueAt(index, 5).toString());
-    }
-
-    /**
-     * Checks if a song is already listed in the library table
-     *
-     * @param filePath the filepath of the song being searched for
-     * @return true if the song exists in the library table
-     */
-    private boolean songExistsInLibraryTable(String filePath) {
-        for(int i = 0; i < libTable.getRowCount(); i++) {
-            if(filePath.equals(libTable.getValueAt(i, 5))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /* LISTENERS */
 
     /**
      * A listener for the Previous Song action
@@ -366,18 +252,18 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            if(player.getCurrentSongIndex() != 0) {
+            if(ShiTunes.player.getLoadedSongIndex() != 0) {
                 // if not at top of library, skip previous, otherwise do nothing
-                if(player.getState() == 2 || player.getState() == 5) {
+                if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
                     // if player is currently playing/resumed
                     // stop current song
                     // decrement player.currentSongIndex
                     // play previous song
-                    player.stop();
-                    if(player.getCurrentSongIndex() > 0) {
-                        setCurrentSong(player.getCurrentSongIndex() - 1);
+                    ShiTunes.player.stop();
+                    if(ShiTunes.player.getLoadedSongIndex() > 0) {
+                        ShiTunes.player.setLoadedSong(ShiTunes.player.getLoadedSongIndex() - 1);
                     }
-                    player.play();
+                    ShiTunes.player.play();
                 }
             }
         }
@@ -393,14 +279,14 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            boolean selectedSongIsCurrent = player.getSelectedSong().equals(player.getCurrentSong());
-            if (selectedSongIsCurrent && player.getState() == 4) {
+            boolean selectedSongIsCurrent = ShiTunes.library.getSelectedSong().equals(ShiTunes.player.getLoadedSong());
+            if (selectedSongIsCurrent && ShiTunes.player.getState() == 4) {
                 // if selected song is current song on player
                 // and player.state == paused
-                player.resume();
+                ShiTunes.player.resume();
             } else {
-                setCurrentSong(libTable.getSelectedRow());
-                player.play();
+                ShiTunes.player.setLoadedSong(ShiTunes.library.getTable().getSelectedRow());
+                ShiTunes.player.play();
             }
         }
     }
@@ -415,7 +301,7 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            player.pause();
+            ShiTunes.player.pause();
         }
     }
 
@@ -429,7 +315,7 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            player.stop();
+            ShiTunes.player.stop();
         }
     }
 
@@ -445,19 +331,20 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-             if(player.getCurrentSongIndex() < libTable.getRowCount() - 1) {
-                if(player.getState() == 2 || player.getState() == 5) {
+             if(ShiTunes.player.getLoadedSongIndex() < ShiTunes.library.getTable().getRowCount() - 1) {
+                if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
                     // if player is currently playing/resumed
                     // stop current song
                     // decriment player.currentSongIndex
                     // play next song
-                    player.stop();
-                    setCurrentSong(player.getCurrentSongIndex() + 1);
-                    player.play();
+                    ShiTunes.player.stop();
+                    ShiTunes.player.setLoadedSong(ShiTunes.player.getLoadedSongIndex() + 1);
+                    ShiTunes.player.play();
                 }
             }
         }
     }
+
     /**
      * Exit item listener for the Main Menu.
      * <p>
@@ -467,7 +354,7 @@ public class GUI extends JFrame{
      */
     class ExitItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            db.close();
+            ShiTunes.db.close();
             System.exit(0);
         }
     }
@@ -489,12 +376,12 @@ public class GUI extends JFrame{
             if (chooser.showDialog(shiTunesFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                if(!songExistsInLibraryTable(selectedSong.getFilePath())) {
-                    DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+                if(!ShiTunes.library.songExistsInLibraryTable(selectedSong.getFilePath())) {
+                    DefaultTableModel model = (DefaultTableModel) ShiTunes.library.getTable().getModel();
                     model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
                             selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
-                    setCurrentSong(model.getRowCount() - 1);
-                    player.play();
+                    ShiTunes.player.setLoadedSong(model.getRowCount() - 1);
+                    ShiTunes.player.play();
                 } else {
                     // TODO: display something that tells the user the song isn't being opened
                 }
@@ -517,7 +404,7 @@ public class GUI extends JFrame{
             if (chooser.showDialog(shiTunesFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                addSongToLibrary(selectedSong);
+                ShiTunes.library.addSongToLibrary(selectedSong);
             }
         }
     }
@@ -528,25 +415,24 @@ public class GUI extends JFrame{
      * When "Delete Song" is selected from the main menu
      * the selected song is deleted from the database
      * and removed from the Music Library listing
-     *
      */
     class DeleteItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
 
             // Get row and filename of selected song to be deleted
-            int row = libTable.getSelectedRow();
-            String selectedSong = libTable.getValueAt(row, 5).toString();
+            int row = ShiTunes.library.getTable().getSelectedRow();
+            String selectedSong = ShiTunes.library.getTable().getValueAt(row, 5).toString();
 
             // Stop player if song being deleted is the current song on the player
-            if(selectedSong.equals(player.getCurrentSong())) {
-                player.stop();
+            if(selectedSong.equals(ShiTunes.player.getLoadedSong())) {
+                ShiTunes.player.stop();
             }
 
-            DefaultTableModel model = (DefaultTableModel) libTable.getModel();
+            DefaultTableModel model = (DefaultTableModel) ShiTunes.library.getTable().getModel();
             model.removeRow(row);
 
             //Delete song from database by using filepath as an identifier
-            db.deleteSong(selectedSong);
+            ShiTunes.db.deleteSong(selectedSong);
         }
     }
 
@@ -555,8 +441,6 @@ public class GUI extends JFrame{
      * <p>
      * Interprets right mouse click to trigger
      * showing the popup menu
-     *
-     *
      */
     class PopupListener extends MouseAdapter {
         @Override
@@ -575,17 +459,4 @@ public class GUI extends JFrame{
             }
         }
     }
-
-    /* TODO: Delete this in production code
-    private void loadDummyData() {
-        String music_dir = getClass().getResource("/mp3/").getPath();
-        Song song = new Song(music_dir + "1.mp3");
-        db.insertSong(song);
-        song = new Song(music_dir + "2.mp3");
-        db.insertSong(song);
-        song = new Song(music_dir + "3.mp3");
-        db.insertSong(song);
-        song = new Song(music_dir + "4.mp3");
-        db.insertSong(song);
-    }*/
 }
