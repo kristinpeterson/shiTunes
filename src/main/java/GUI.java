@@ -198,21 +198,25 @@ public class GUI extends JFrame{
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem addItem = new JMenuItem("Add Song");
         JMenuItem deleteItem = new JMenuItem("Delete Song");
+        JMenuItem createPlaylistItem = new JMenuItem("Create Playlist");
         JMenuItem exitItem = new JMenuItem("Exit");
 
         ActionListener openListener = new OpenItemListener();
         ActionListener addListener = new AddItemListener();
         ActionListener deleteListener = new DeleteItemListener();
+        ActionListener createPlaylistListener = new CreatePlaylistListener();
         ActionListener exitListener = new ExitItemListener();
 
         openItem.addActionListener(openListener);
         addItem.addActionListener(addListener);
         deleteItem.addActionListener(deleteListener);
+        createPlaylistItem.addActionListener(createPlaylistListener);
         exitItem.addActionListener(exitListener);
 
         menu.add(openItem);
         menu.add(addItem);
         menu.add(deleteItem);
+        menu.add(createPlaylistItem);
         menu.add(exitItem);
         return menu;
     }
@@ -433,6 +437,22 @@ public class GUI extends JFrame{
 
             //Delete song from database by using filepath as an identifier
             ShiTunes.db.deleteSong(selectedSong);
+        }
+    }
+
+    /**
+     * Listener that creates a new Playlist
+     * <p>
+     * When 'Create Playlist' is selected from main menu,
+     * a popup appears to allow user to name their playlist.
+     * New, empty playlist is added to database.
+     */
+    class CreatePlaylistListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            //TODO:
+
+            //Display message box with a textfield for user to type into
+            //addPlaylistMaster(String userInput)
         }
     }
 

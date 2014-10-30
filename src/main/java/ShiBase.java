@@ -294,4 +294,128 @@ public class ShiBase {
         }
         return false;
     }
+
+    /**
+     * Create a master table that holds all the playlists
+     *
+     * @return true if table created successfully
+     */
+    public boolean createPlaylistMasterTable() {
+        try {
+            String query = "CREATE TABLE Playlist_Master (" +
+                    "playlist_id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1), " +
+                    "playlist_name VARCHAR(100))";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+            return true;
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Delete the master table of playlists from database
+     *
+     * @return true if table deleted successfully
+     */
+    public boolean deletePlaylistMasterTable() {
+        return dropTable("Playlist_Master");
+    }
+
+    /**
+     * Add an new playlist to the master table
+     *
+     * @param playlist the name of the newly created playlist
+     * @return true if entry successfully added to table
+     */
+    public boolean addPlaylistMaster(String playlist) {
+        try {
+            String query = "INSERT INTO Playlist_Master (playlist_name) VALUES ('" + playlist + "')";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Delete a playlist from the master playlist table
+     *
+     * @param playlist the name of playlist to be deleted
+     * @return true if entry successfully deleted from table
+     */
+    public boolean deletePlaylistMaster(String playlist) {
+        try {
+            String query = "DELETE FROM Playlist_Master WHERE playlist_name = '" + playlist + "'";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+            return true;
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Creates the connector table that will connect Playlists to Songs by ID
+     *
+     * @param playlist name of existing playlist
+     * @return true if table created successfully
+     */
+    public boolean createPlaylistSongTable(String playlist) {
+        try {
+            String query = "CREATE TABLE " + playlist +
+                    "(playlist_id INTEGER NOT NULL , " +
+                    "song_id INTEGER NOT NULL)";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+            return true;
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Deletes specified PlaylistSong table
+     *
+     * @param playlist name of playlist to be deleted
+     * @return true if table deleted successfully
+     */
+    public boolean deletePlaylistSongTable(String playlist) {
+        return dropTable(playlist);
+    }
+
+    /**********This function still W.I.P.*****************************
+     * Get all the songs associated with a playlist
+     *
+     * @param choose_id unique identifier of a playlist
+     * @return an array of Song objects
+     */
+    /*public Song[] getPlaylistSongs(int choose_id) {
+        Song listSongs[];
+        String query = "SELECT * FROM " + MUSIC_TABLE +
+                "WHERE id IN " +
+                "(SELECT song_id FROM ";
+
+        try {
+            stmt = conn.prepareStatement(query);
+            ResultSet songsRS = stmt.executeQuery();
+
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+    }*/
 }
