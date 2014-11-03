@@ -21,11 +21,12 @@ public class ShiBase {
     /**
      * The columns of the SONG table properly formatted for GUI
      */
-    public static final String[] SONG_COLUMN_NAMES =  {"Artist", "Title", "Album", "Year", "Genre", "File Path"};
+    public static final String[] SONG_COLUMN_NAMES =  {"Artist", "Title", "Album", "Year", "Genre", "File Path", "Comment"};
 
     // The database table column names
     // SONG Table
-    private static final String[] SONG_COLUMNS =  {"songId", "artist", "title", "album", "yearReleased", "genre", "filePath"};
+    private static final String[] SONG_COLUMNS =  {"songId", "artist", "title", "album", "yearReleased",
+            "genre", "filePath", "comment"};
     // PLAYLIST Table
     private static final String[] PLAYLIST_COLUMNS = {"playlistId", "playlistName"};
     // PLAYLIST_SONG Table
@@ -168,6 +169,7 @@ public class ShiBase {
                     "album VARCHAR(150), " +
                     "yearReleased VARCHAR(4), " +
                     "genre VARCHAR(20), " +
+                    "comment VARCHAR(200), " +
                     "PRIMARY KEY (songId))";
             stmt = conn.prepareStatement(query);
             stmt.execute();
@@ -193,8 +195,8 @@ public class ShiBase {
         }
         try {
             String query = "INSERT INTO " + SONG_TABLE +
-                    " (filePath, artist, title, album, yearReleased, genre)" +
-                    " VALUES (?, ?, ?, ?, ?, ?)";
+                    " (filePath, artist, title, album, yearReleased, genre, comment)" +
+                    " VALUES (?, ?, ?, ?, ?, ?, ?)";
             stmt = conn.prepareStatement(query);
             stmt.setString(1, song.getFilePath());
             stmt.setString(2, song.getArtist());
@@ -202,6 +204,7 @@ public class ShiBase {
             stmt.setString(4, song.getAlbum());
             stmt.setString(5, song.getYear());
             stmt.setString(6, song.getGenre());
+            stmt.setString(7, song.getComment());
             stmt.execute();
             stmt.close();
         }
@@ -336,10 +339,10 @@ public class ShiBase {
      * @return the given result from the SONG table as a String array
      */
     private String[] getSongRow(ResultSet rs) {
-        String[] song = new String[SONG_COLUMNS.length];
+        String[] song = new String[SONG_COLUMN_NAMES.length];
         try {
-            for(int i = 0; i < SONG_COLUMNS.length; i++) {
-                song[i] = rs.getString(SONG_COLUMNS[i]);
+            for(int i = 0; i < SONG_COLUMN_NAMES.length; i++) {
+                song[i] = rs.getString(SONG_COLUMNS[i+1]);
             }
         } catch (SQLException e) {
             e.printStackTrace();

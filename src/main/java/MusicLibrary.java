@@ -57,7 +57,7 @@ public class MusicLibrary {
             // Add row to JTable
             DefaultTableModel model = (DefaultTableModel) libTable.getModel();
             model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
-                    song.getYear(), song.getGenre(), song.getFilePath()});
+                    song.getYear(), song.getGenre(), song.getFilePath(), song.getComment()});
         } else {
             // TODO: display something that tells the user the song isn't being added
         }

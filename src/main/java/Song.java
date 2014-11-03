@@ -16,6 +16,7 @@ public class Song {
     private String album;
     private String year;
     private String genre;
+    private String comment;
 
     /**
      * Song constructor takes the song file path and utilizes the
@@ -35,6 +36,7 @@ public class Song {
                 this.album = id3v1Tag.getAlbum();
                 this.year = id3v1Tag.getYear();
                 this.genre = id3v1Tag.getGenreDescription();
+                this.comment = id3v1Tag.getComment();
             } else if (mp3file.hasId3v2Tag()) {
                 ID3v2 id3v2Tag = mp3file.getId3v2Tag();
                 this.artist = id3v2Tag.getArtist();
@@ -42,6 +44,7 @@ public class Song {
                 this.album = id3v2Tag.getAlbum();
                 this.year = id3v2Tag.getYear();
                 this.genre = id3v2Tag.getGenreDescription();
+                this.comment = id3v2Tag.getComment();
             }
         } catch (IOException ioe) {
             System.out.println("Song.java: IOException occurred");
@@ -103,4 +106,11 @@ public class Song {
     public String getGenre() {
         return genre;
     }
+
+    /**
+     * Returns the Song comment
+     *
+     * @return the Song comment
+     */
+    public String getComment() { return comment; }
 }

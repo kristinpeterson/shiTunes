@@ -16,29 +16,6 @@
     <schema name="SYSIBM" catalog=""/>
     <schema name="SYSPROC" catalog=""/>
     <schema name="SYSSTAT" catalog=""/>
-    <table name="PLAYLIST" schema="APP" catalog="" type="TABLE">
-      <column name="PLAYLISTID" sqlType="INTEGER" precision="10" scale="0" nullable="false" jdbcType="4" def="QVVUT0lOQ1JFTUVOVDogc3RhcnQgMSBpbmNyZW1lbnQgMQ==" autoIncrement="true"/>
-      <column name="PLAYLISTNAME" sqlType="VARCHAR" precision="100" scale="0" nullable="false" jdbcType="12"/>
-      <primary-key name="SQL141102175008810" columns="PLAYLISTID"/>
-      <exported-key name="FK_PLAYLISTID" table="PLAYLIST_SONG" schema="APP" catalog="" columns="PLAYLISTID"/>
-    </table>
-    <table name="PLAYLIST_SONG" schema="APP" catalog="" type="TABLE">
-      <column name="PLAYLISTID" sqlType="INTEGER" precision="10" scale="0" nullable="false" jdbcType="4"/>
-      <column name="SONGID" sqlType="INTEGER" precision="10" scale="0" nullable="false" jdbcType="4"/>
-      <foreign-key name="FK_PLAYLISTID" columns="PLAYLISTID" ref-table="PLAYLIST" ref-schema="APP" ref-catalog="" ref-columns="PLAYLISTID" update-rule="3" delete-rule="0" deferrability="2"/>
-      <foreign-key name="FK_SONGID" columns="SONGID" ref-table="SONG" ref-schema="APP" ref-catalog="" ref-columns="SONGID" update-rule="3" delete-rule="0" deferrability="2"/>
-    </table>
-    <table name="SONG" schema="APP" catalog="" type="TABLE">
-      <column name="SONGID" sqlType="INTEGER" precision="10" scale="0" nullable="false" jdbcType="4" def="QVVUT0lOQ1JFTUVOVDogc3RhcnQgMSBpbmNyZW1lbnQgMQ==" autoIncrement="true"/>
-      <column name="FILEPATH" sqlType="VARCHAR" precision="200" scale="0" nullable="false" jdbcType="12"/>
-      <column name="ARTIST" sqlType="VARCHAR" precision="100" scale="0" nullable="true" jdbcType="12"/>
-      <column name="TITLE" sqlType="VARCHAR" precision="150" scale="0" nullable="true" jdbcType="12"/>
-      <column name="ALBUM" sqlType="VARCHAR" precision="150" scale="0" nullable="true" jdbcType="12"/>
-      <column name="YEARRELEASED" sqlType="VARCHAR" precision="4" scale="0" nullable="true" jdbcType="12"/>
-      <column name="GENRE" sqlType="VARCHAR" precision="20" scale="0" nullable="true" jdbcType="12"/>
-      <primary-key name="SQL141102175008771" columns="SONGID"/>
-      <exported-key name="FK_SONGID" table="PLAYLIST_SONG" schema="APP" catalog="" columns="SONGID"/>
-    </table>
     <table name="SYSALIASES" schema="SYS" catalog="" type="SYSTEM TABLE">
       <column name="ALIASID" sqlType="CHAR" precision="36" scale="0" nullable="false" jdbcType="1"/>
       <column name="ALIAS" sqlType="VARCHAR" precision="128" scale="0" nullable="false" jdbcType="12"/>
