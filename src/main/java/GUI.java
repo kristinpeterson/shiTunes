@@ -72,7 +72,6 @@ public class GUI extends JFrame{
             public void mousePressed(MouseEvent me) {
                 if (me.getClickCount() == 2) {
                     // set selected song as currently loaded song for the player
-                    System.out.println("selected row index: " + ShiTunes.library.getTable().getSelectedRow());
                     ShiTunes.player.setLoadedSong(ShiTunes.library.getTable().getSelectedRow());
                     ShiTunes.player.play();
                 }

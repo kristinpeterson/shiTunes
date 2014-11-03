@@ -16,9 +16,6 @@ public class ShiTunes {
     }
 
     public static void main(String[] args) {
-        // Connect to ShiBase
-        db.connect();
-
         // Init GUI
         GUI gui = new GUI();
 

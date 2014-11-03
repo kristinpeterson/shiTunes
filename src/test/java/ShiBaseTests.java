@@ -12,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 public class ShiBaseTests {
 
     Song song = new Song(getClass().getResource("/mp3/test.mp3").getPath());
+    String playlist = "Polka";
     ShiBase db= new ShiBase();
 
     @Test
@@ -36,17 +37,40 @@ public class ShiBaseTests {
     }
 
     @Test
-    public void testE_DeleteSong() {
+    public void testE_AddPlaylist() {
+        assertEquals(true, db.addPlaylist(playlist));
+    }
+
+    @Test
+    public void testF_AddSongToPlaylist() {
+        assertEquals(true, db.addSongToPlaylist(song.getFilePath(), playlist));
+    }
+
+    @Test
+    public void testG_GetPlaylistSongs() {
+        Object[][] playlistSongs = db.getPlaylistSongs(playlist);
+        assertEquals(true, playlistSongs.length > 0);
+    }
+
+    @Test
+    public void testH_DeleteSong() {
         assertEquals(true, db.deleteSong(song.getFilePath()));
     }
 
     @Test
-    public void testF_DropTable() {
-        assertEquals(true, db.dropTable(ShiBase.MUSIC_TABLE));
+    public void testI_DeletePlaylist() {
+        assertEquals(true, db.deletePlaylist(playlist));
     }
 
     @Test
-    public void testG_Close() {
+    public void testJ_DropTables() {
+        assertEquals(true, db.dropTable(ShiBase.PLAYLIST_SONG_TABLE));
+        assertEquals(true, db.dropTable(ShiBase.SONG_TABLE));
+        assertEquals(true, db.dropTable(ShiBase.PLAYLIST_TABLE));
+    }
+
+    @Test
+    public void testK_Close() {
         assertEquals(true, db.close());
     }
 }

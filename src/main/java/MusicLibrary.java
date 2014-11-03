@@ -27,7 +27,7 @@ public class MusicLibrary {
     private void createTable() {
         // Build library table
         // Instantiate library table model - this prevents individual cells from being editable
-        DefaultTableModel tableModel = new DefaultTableModel(ShiTunes.db.getAllSongs(), ShiBase.MUSIC_COLUMNS) {
+        DefaultTableModel tableModel = new DefaultTableModel(ShiTunes.db.getAllSongs(), ShiBase.SONG_COLUMN_NAMES) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 //all cells false
