@@ -1,5 +1,7 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -24,7 +26,7 @@ import java.util.List;
 public class GUI extends JFrame{
 
     private JFrame shiTunesFrame;
-    private JPanel buttonPanel;
+    private JPanel controlPanel;
     private JPopupMenu popup;
     private JFileChooser chooser = new JFileChooser();
     private static FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
@@ -46,7 +48,7 @@ public class GUI extends JFrame{
         shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        buttonPanel = new JPanel();
+        controlPanel = new JPanel();
         JPanel libraryPanel = new JPanel(new GridLayout(1, 1));
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
@@ -110,7 +112,7 @@ public class GUI extends JFrame{
         addUIComponents();
 
         // Build main panel
-        mainPanel.add(buttonPanel);
+        mainPanel.add(controlPanel);
         mainPanel.add(libraryPanel);
 
         // Add all GUI components to shiTunes application frame
@@ -155,6 +157,14 @@ public class GUI extends JFrame{
             JButton previousButton = new JButton(previousIcon);
             JButton nextButton = new JButton(nextIcon);
 
+            // Initialize Volume Slider
+            JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, ShiTunes.player.getVolume());
+            slider.setMinorTickSpacing(10);
+            slider.setMajorTickSpacing(20);
+            slider.setPaintTicks(false);
+            slider.setPaintLabels(false);
+            slider.setLabelTable(slider.createStandardLabels(10));
+
             // Set preferred button size
             playButton.setPreferredSize(new Dimension(40, 40));
             pauseButton.setPreferredSize(new Dimension(40, 40));
@@ -162,29 +172,23 @@ public class GUI extends JFrame{
             previousButton.setPreferredSize(new Dimension(40, 40));
             nextButton.setPreferredSize(new Dimension(40, 40));
 
-            // Set action listener for play button
+            // Set action listeners
             playButton.addActionListener(new PlayListener());
-
-            // Set action listener for pause button
             pauseButton.addActionListener(new PauseListener());
-
-            // Set action listener for stop button
             stopButton.addActionListener(new StopListener());
-
-            // Set action listener for previous button
             previousButton.addActionListener(new PreviousListener());
-
-            // Set action listener for next button
             nextButton.addActionListener(new NextListener());
+            slider.addChangeListener(new VolumeListener());
 
-            // Add buttons to buttonPanel
-            buttonPanel.add(previousButton);
-            buttonPanel.add(playButton);
-            buttonPanel.add(pauseButton);
-            buttonPanel.add(stopButton);
-            buttonPanel.add(nextButton);
+            // Add buttons to controlPanel
+            controlPanel.add(previousButton);
+            controlPanel.add(playButton);
+            controlPanel.add(pauseButton);
+            controlPanel.add(stopButton);
+            controlPanel.add(nextButton);
+            controlPanel.add(slider);
 
-            buttonPanel.setMaximumSize(new Dimension(1080, 40));
+            controlPanel.setMaximumSize(new Dimension(1080, 40));
         } catch (IOException e) {
             // IOException thrown while reading resource files
             e.printStackTrace();
@@ -245,6 +249,25 @@ public class GUI extends JFrame{
 
         popup.add(popupAdd);
         popup.add(popupDelete);
+    }
+
+    /* ********* */
+    /* Listeners */
+    /* ********* */
+
+    /**
+     * A Listener for the volume slider
+     */
+    class VolumeListener implements ChangeListener {
+        public void stateChanged(ChangeEvent e) {
+            JSlider source = (JSlider)e.getSource();
+            if (!source.getValueIsAdjusting()) {
+                // volume converted to double value in range [0.0, 1.0]
+                // which is the range required by BasicPlayer setGain() method
+                double volume = source.getValue() / 100.00;
+                ShiTunes.player.adjustVolume(volume);
+            }
+        }
     }
 
     /**

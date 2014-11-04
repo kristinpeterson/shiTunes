@@ -1,7 +1,4 @@
-import javazoom.jlgui.basicplayer.BasicController;
-import javazoom.jlgui.basicplayer.BasicPlayer;
-import javazoom.jlgui.basicplayer.BasicPlayerEvent;
-import javazoom.jlgui.basicplayer.BasicPlayerListener;
+import javazoom.jlgui.basicplayer.*;
 
 import java.io.File;
 import java.util.Map;
@@ -41,6 +38,15 @@ public class MusicPlayer implements BasicPlayerListener {
         player = new BasicPlayer();
         controller = (BasicController) player;
         player.addBasicPlayerListener(this);
+    }
+
+    /**
+     * Gets the current volume level of the player/system
+     *
+     * @return the current volume level as an int value in range [0, 100]
+     */
+    public int getVolume() {
+        return (int)(player.getGainValue() * 100);
     }
 
     /**
@@ -111,6 +117,22 @@ public class MusicPlayer implements BasicPlayerListener {
             e.printStackTrace();
         }
         return false;
+    }
+
+    /**
+     * Adjusts the volume to the given value
+     * <p>
+     * Note: the volume value must be in range [0.0, 1.0] as per
+     * BasicPlayer setGain() method requirement
+     *
+     * @param volume the volume to change to (double value in range [0.0, 1.0]
+     */
+    public void adjustVolume(double volume) {
+        try {
+            controller.setGain(volume);
+        } catch (BasicPlayerException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
