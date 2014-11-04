@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: basicplayer3.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/basicplayer3.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

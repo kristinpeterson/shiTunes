@@ -17,6 +17,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  * The GUI class builds the shiTunes Graphical User Interface
@@ -47,9 +50,12 @@ public class GUI extends JFrame{
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
+        JPanel mainLibraryPanel = new JPanel();
+        mainLibraryPanel.setLayout(new BoxLayout(mainLibraryPanel, BoxLayout.Y_AXIS));
         controlPanel = new JPanel();
         JPanel libraryPanel = new JPanel(new GridLayout(1, 1));
+        JPanel playlistPanel = new JPanel(new GridLayout(2,1));
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
 
@@ -105,6 +111,15 @@ public class GUI extends JFrame{
             }
         });
 
+        //creates Library tree and Playlist tree to the side column of shiTunes
+        DefaultMutableTreeNode top = new DefaultMutableTreeNode ("Library");
+        DefaultMutableTreeNode playlistTreeNode = new DefaultMutableTreeNode ("Playlists");
+        JTree playlistTree = new JTree(playlistTreeNode);
+        JTree libraryTree = new JTree(top);
+        playlistPanel.add(libraryTree);
+        playlistPanel.add(playlistTree);
+        //playlistPanel.add(scrollPane(playlistTree));
+
         // Add scroll pane (library table) to library panel
         libraryPanel.add(scrollPane);
 
@@ -112,8 +127,10 @@ public class GUI extends JFrame{
         addUIComponents();
 
         // Build main panel
-        mainPanel.add(controlPanel);
-        mainPanel.add(libraryPanel);
+        mainLibraryPanel.add(controlPanel);
+        mainLibraryPanel.add(libraryPanel);
+        mainPanel.add(mainLibraryPanel);
+        mainPanel.add(playlistPanel);
 
         // Add all GUI components to shiTunes application frame
         shiTunesFrame.setJMenuBar(menuBar);

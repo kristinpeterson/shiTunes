@@ -1,0 +1,20 @@
+# Created by .gitignore support plugin (hsz.mobi)
+### Java template
+*.class
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.war
+*.ear
+
+# mac osx
+.DS_Store
+
+# intellij
+.idea/workspace.xml
+
+# derby db files
+ShiBase/*
+derby.log
