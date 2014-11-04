@@ -460,10 +460,13 @@ public class GUI extends JFrame{
      */
     class CreatePlaylistListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            //TODO:
 
             //Display message box with a textfield for user to type into
             //addPlaylistMaster(String userInput)
+            JFrame createPLFrame = new JFrame("Create New Playlist");
+            String playlistName = (String)JOptionPane.showInputDialog(createPLFrame, "New playlist's name: ",
+                    "Create New Playlist", JOptionPane.PLAIN_MESSAGE);
+            ShiTunes.db.addPlaylist(playlistName);
         }
     }
 
