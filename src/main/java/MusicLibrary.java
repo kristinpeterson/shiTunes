@@ -11,6 +11,7 @@ public class MusicLibrary {
 
     private JTable libTable;
     private String selectedSong;
+    private int[] selectedSongRange;    // [min-index, max-index]
 
     /**
      * Default constructor for ShiTunes MusicLibrary
@@ -81,6 +82,25 @@ public class MusicLibrary {
         if(index >= 0) {
             this.selectedSong = ShiTunes.library.getTable().getValueAt(index, 5).toString();
         }
+    }
+
+    /**
+     * Sets the selected songs index range
+     *
+     * @param min the minimum index of the selected range of songs
+     * @param max the maximum index of the selected range of songs
+     */
+    public void setSelectedSongRange(int min, int max) {
+        selectedSongRange = new int[] {min, max};
+    }
+
+    /**
+     * Gets the selected songs index range
+     *
+     * @return the selected song range as an array [min-index, max-index]
+     */
+    public int[] getSelectedSongRange() {
+        return selectedSongRange;
     }
 
     /**

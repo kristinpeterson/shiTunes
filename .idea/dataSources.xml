@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="DataSourceManagerImpl" format="xml" hash="2605617239">
+  <component name="DataSourceManagerImpl" format="xml" hash="3539041312">
     <data-source source="LOCAL" name="ShiBase" uuid="e2d8cfe9-5609-494f-b345-87235888c657">
       <driver-ref>derby.embedded</driver-ref>
       <synchronize>true</synchronize>

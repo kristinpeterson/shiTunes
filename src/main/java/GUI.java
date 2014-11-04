@@ -59,11 +59,15 @@ public class GUI extends JFrame{
         ShiTunes.library.getTable().setPreferredScrollableViewportSize(new Dimension(500, 200));
         ShiTunes.library.getTable().setFillsViewportHeight(true);
 
-        // Setup Library table listener for selected row
+        // Setup Library table listener for selected row(s)
         ShiTunes.library.getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener(){
             public void valueChanged(ListSelectionEvent event) {
                 // set the currently selected row as the selected song
                 ShiTunes.library.setSelectedSong(ShiTunes.library.getTable().getSelectedRow());
+                // set the selection range (min == max if only one selected)
+                int min = ((DefaultListSelectionModel)event.getSource()).getMinSelectionIndex();
+                int max = ((DefaultListSelectionModel)event.getSource()).getMaxSelectionIndex();
+                ShiTunes.library.setSelectedSongRange(min, max);
             }
         });
 
@@ -196,7 +200,7 @@ public class GUI extends JFrame{
         JMenu menu = new JMenu("File");
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem addItem = new JMenuItem("Add Song");
-        JMenuItem deleteItem = new JMenuItem("Delete Song");
+        JMenuItem deleteItem = new JMenuItem("Delete Song(s)");
         JMenuItem createPlaylistItem = new JMenuItem("Create Playlist");
         JMenuItem exitItem = new JMenuItem("Exit");
 
@@ -230,7 +234,7 @@ public class GUI extends JFrame{
         popup = new JPopupMenu();
 
         JMenuItem popupAdd = new JMenuItem("Add Song");
-        JMenuItem popupDelete = new JMenuItem("Delete Song");
+        JMenuItem popupDelete = new JMenuItem("Delete Song(s)");
         ActionListener addListener = new AddItemListener();
         ActionListener deleteListener = new DeleteItemListener();
         popupAdd.addActionListener(addListener);
@@ -421,21 +425,29 @@ public class GUI extends JFrame{
      */
     class DeleteItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
+            // range[0] = min index of selected range
+            // range[1] = max index of selected range
+            int min = ShiTunes.library.getSelectedSongRange()[0];
+            int max = ShiTunes.library.getSelectedSongRange()[1];
 
-            // Get row and filename of selected song to be deleted
-            int row = ShiTunes.library.getTable().getSelectedRow();
-            String selectedSong = ShiTunes.library.getTable().getValueAt(row, 5).toString();
+            // cycle through all selected songs and delete
+            // one at a time
+            // Note: starts at the bottom of the selected rows (ie. max index)
+            // and works it's way up the list of selected rows
+            for(int row = max; row >= min; row--) {
+                String selectedSong = ShiTunes.library.getTable().getValueAt(row, 5).toString();
 
-            // Stop player if song being deleted is the current song on the player
-            if(selectedSong.equals(ShiTunes.player.getLoadedSong())) {
-                ShiTunes.player.stop();
+                // Stop player if song being deleted is the current song on the player
+                if(selectedSong.equals(ShiTunes.player.getLoadedSong())) {
+                    ShiTunes.player.stop();
+                }
+
+                DefaultTableModel model = (DefaultTableModel) ShiTunes.library.getTable().getModel();
+                model.removeRow(row);
+
+                //Delete song from database by using filepath as an identifier
+                ShiTunes.db.deleteSong(selectedSong);
             }
-
-            DefaultTableModel model = (DefaultTableModel) ShiTunes.library.getTable().getModel();
-            model.removeRow(row);
-
-            //Delete song from database by using filepath as an identifier
-            ShiTunes.db.deleteSong(selectedSong);
         }
     }
 
