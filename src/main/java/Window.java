@@ -6,6 +6,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -16,121 +17,99 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import javax.swing.JTree;
-import javax.swing.SwingUtilities;
-import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  * The GUI class builds the shiTunes Graphical User Interface
  *
  * @author shiTunes inc.
  */
-public class GUI extends JFrame{
+public class Window extends JFrame {
 
+    // Window type
+    public static int MAIN = 0;
+    public static int PLAYLIST = 1;
+
+    private MusicTable musicTable;
+    private int windowType;
+    private JPopupMenu musicTablePopupMenu;
     private JFrame shiTunesFrame;
     private JPanel controlPanel;
-    private JPopupMenu popup;
-    private JFileChooser chooser = new JFileChooser();
-    private static FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
 
     /**
      * The GUI default constructor
      * <p>
-     * Initializes and connects to the database (ShiBase),
-     * Builds the shiBase GUI, including Music Library table,
-     * Main Menu and buttons (previous, play/pause, stop, next)
+     * Builds the shiTunes GUI
+     *
+     * @param type the type of window to create
+     */
+    public Window(int type, MusicTable table) {
+        // Set this Window instance's table
+        this.musicTable = table;
+
+        // Set this Window instance's type
+        this.windowType = type;
+
+        buildWindowLayout();
+    }
+
+    /**
+     * Displays the shiTunes GUI
      *
      */
-    public GUI() {
+    public void display() {
+        shiTunesFrame.setVisible(true);
+    }
 
+    /**
+     * Builds the Window's layout based on it's type
+     *
+     */
+    private void buildWindowLayout() {
+        // Create outer shiTunes frame and set various parameters
         shiTunesFrame = new JFrame();
         shiTunesFrame.setTitle("shiTunes");
         shiTunesFrame.setMinimumSize(new Dimension(900, 600));
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        // Create the main panel that resides within the shiTunesFrame
+        // Layout: BoxLayout, X_AXIS
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
-        JPanel mainLibraryPanel = new JPanel();
-        mainLibraryPanel.setLayout(new BoxLayout(mainLibraryPanel, BoxLayout.Y_AXIS));
+
+        // Create the controlTablePanel that will reside within the mainPanel
+        // Layout: BoxLayout, Y_AXIS
+        JPanel controlTablePanel = new JPanel();
+        controlTablePanel.setLayout(new BoxLayout(controlTablePanel, BoxLayout.Y_AXIS));
+
+        // Instantiate the controlPanel (Buttons and Volume Slider)
         controlPanel = new JPanel();
-        JPanel libraryPanel = new JPanel(new GridLayout(1, 1));
-        JPanel playlistPanel = new JPanel(new GridLayout(2,1));
+
+        // Create menuBar and add File menu
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
 
-        //Popup menu initialization
-        createPopupMenu();
+        // Build the music table
+        buildMusicTable();
 
-        // Instantiate scroll pane for library
-        JScrollPane scrollPane = new JScrollPane(ShiTunes.library.getTable());
-        ShiTunes.library.getTable().setPreferredScrollableViewportSize(new Dimension(500, 200));
-        ShiTunes.library.getTable().setFillsViewportHeight(true);
+        // Instantiate scroll pane for table
+        JScrollPane scrollPane = new JScrollPane(musicTable.getTable());
 
-        // Setup Library table listener for selected row(s)
-        ShiTunes.library.getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-            public void valueChanged(ListSelectionEvent event) {
-                // set the currently selected row as the selected song
-                ShiTunes.library.setSelectedSong(ShiTunes.library.getTable().getSelectedRow());
-                // set the selection range (min == max if only one selected)
-                int min = ((DefaultListSelectionModel)event.getSource()).getMinSelectionIndex();
-                int max = ((DefaultListSelectionModel)event.getSource()).getMaxSelectionIndex();
-                ShiTunes.library.setSelectedSongRange(min, max);
-            }
-        });
-
-        // Set double click listener to play selected song.
-        ShiTunes.library.getTable().addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent me) {
-                if (me.getClickCount() == 2) {
-                    // set selected song as currently loaded song for the player
-                    ShiTunes.player.setLoadedSong(ShiTunes.library.getTable().getSelectedRow());
-                    ShiTunes.player.play();
-                }
-            }
-        });
-
-        // Set drop target on scroll table
-        // enabling drag and drop of files into library
-        scrollPane.setDropTarget(new DropTarget(){
-            @Override
-            public synchronized void drop(DropTargetDropEvent dtde) {
-                dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
-                Transferable t = dtde.getTransferable();
-                List fileList = null;
-                String filepath;
-                try {
-                    fileList = (List) t.getTransferData(DataFlavor.javaFileListFlavor);
-                    for(int i = 0; i < fileList.size(); i++) {
-                        Song song = new Song(fileList.get(i).toString());
-                        ShiTunes.library.addSongToLibrary(song);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        //creates Library tree and Playlist tree to the side column of shiTunes
-        DefaultMutableTreeNode top = new DefaultMutableTreeNode ("Library");
-        DefaultMutableTreeNode playlistTreeNode = new DefaultMutableTreeNode ("Playlists");
-        JTree playlistTree = new JTree(playlistTreeNode);
-        JTree libraryTree = new JTree(top);
-        playlistPanel.add(libraryTree);
-        playlistPanel.add(playlistTree);
-        //playlistPanel.add(scrollPane(playlistTree));
-
+        // Instantiate table panel and
         // Add scroll pane (library table) to library panel
-        libraryPanel.add(scrollPane);
+        JPanel tablePanel = new JPanel(new GridLayout(1, 1));
+        tablePanel.add(scrollPane);
 
-        // Add UI components (buttons)
-        addUIComponents();
+        // Add UI components to the window (buttons/volume slider)
+        buildControlPanel();
 
         // Build main panel
-        mainLibraryPanel.add(controlPanel);
-        mainLibraryPanel.add(libraryPanel);
-        mainPanel.add(mainLibraryPanel);
-        mainPanel.add(playlistPanel);
+        controlTablePanel.add(controlPanel);
+        controlTablePanel.add(tablePanel);
+        if(windowType == Window.MAIN) {
+            mainPanel.add(getPlaylistPanel());
+        }
+        mainPanel.add(controlTablePanel);
 
         // Add all GUI components to shiTunes application frame
         shiTunesFrame.setJMenuBar(menuBar);
@@ -139,20 +118,49 @@ public class GUI extends JFrame{
         shiTunesFrame.setLocationByPlatform(true);
     }
 
-    /**
-     * Displays the shiTunes GUI
-     *
-     */
-    public void displayGUI()
-    {
-        shiTunesFrame.setVisible(true);
+    private void buildMusicTable() {
+        musicTable.getTable().setPreferredScrollableViewportSize(new Dimension(500, 200));
+        musicTable.getTable().setFillsViewportHeight(true);
+
+        /* Add listeners */
+
+        // Add Library table listener for selected row(s)
+        musicTable.getTable().getSelectionModel().addListSelectionListener(new TableItemSelectionListener());
+
+        // Create right-click popup menu and set popup listener
+        createMusicTablePopupMenu();
+        musicTable.getTable().addMouseListener(new MusicTablePopupListener());
+
+        // Add double click listener to play selected song.
+        musicTable.getTable().addMouseListener(new DoubleClickListener());
+
+        // Add drop target on table
+        // enabling drag and drop of files into library
+        musicTable.getTable().setDropTarget(new AddToTableDropTarget());
     }
 
     /**
-     * Adds UI Components to shiTunes GUI Panel
+     * Returns the playlist panel
+     *
+     * @return the playlist panel containing the Library and Playlist branches
+     */
+    private JPanel getPlaylistPanel() {
+        // Creates Library tree and Playlist tree to the side column of shiTunes
+        JPanel playlistPanel = new JPanel(new GridLayout(2,1));
+        DefaultMutableTreeNode libraryTreeNode = new DefaultMutableTreeNode ("Library");
+        DefaultMutableTreeNode playlistTreeNode = new DefaultMutableTreeNode ("Playlists");
+        JTree playlistTree = new JTree(playlistTreeNode);
+        JTree libraryTree = new JTree(libraryTreeNode);
+        playlistPanel.add(libraryTree);
+        playlistPanel.add(playlistTree);
+        return playlistPanel;
+    }
+
+    /**
+     * Adds UI Components to shiTunes Window
      *
      */
-    private void addUIComponents() {
+    private void buildControlPanel() {
         try {
             // Initialize resources
             BufferedImage playResource = ImageIO.read(getClass().getResourceAsStream("/images/play.png"));
@@ -175,7 +183,7 @@ public class GUI extends JFrame{
             JButton nextButton = new JButton(nextIcon);
 
             // Initialize Volume Slider
-            JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, ShiTunes.player.getVolume());
+            JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
             slider.setMinorTickSpacing(10);
             slider.setMajorTickSpacing(20);
             slider.setPaintTicks(false);
@@ -225,17 +233,11 @@ public class GUI extends JFrame{
         JMenuItem createPlaylistItem = new JMenuItem("Create Playlist");
         JMenuItem exitItem = new JMenuItem("Exit");
 
-        ActionListener openListener = new OpenItemListener();
-        ActionListener addListener = new AddItemListener();
-        ActionListener deleteListener = new DeleteItemListener();
-        ActionListener createPlaylistListener = new CreatePlaylistListener();
-        ActionListener exitListener = new ExitItemListener();
-
-        openItem.addActionListener(openListener);
-        addItem.addActionListener(addListener);
-        deleteItem.addActionListener(deleteListener);
-        createPlaylistItem.addActionListener(createPlaylistListener);
-        exitItem.addActionListener(exitListener);
+        addItem.addActionListener(new AddItemListener());
+        deleteItem.addActionListener(new DeleteItemListener());
+        openItem.addActionListener(new OpenItemListener());
+        createPlaylistItem.addActionListener(new CreatePlaylistListener());
+        exitItem.addActionListener(new ExitItemListener());
 
         menu.add(openItem);
         menu.add(addItem);
@@ -246,46 +248,131 @@ public class GUI extends JFrame{
     }
 
     /**
-     * Initializes popup menu for file addition/deletion
+     * Initializes popup menu for the music table
      * <p>
-     * When user right clicks anywhere on JTable
-     * menu items for delete and add popup.
+     * When user right clicks anywhere on music table
+     * a popup menu is displayed.
+     *
      */
-    private void createPopupMenu() {
-        popup = new JPopupMenu();
-
-        JMenuItem popupAdd = new JMenuItem("Add Song");
-        JMenuItem popupDelete = new JMenuItem("Delete Song(s)");
-        ActionListener addListener = new AddItemListener();
-        ActionListener deleteListener = new DeleteItemListener();
-        popupAdd.addActionListener(addListener);
-        popupDelete.addActionListener(deleteListener);
-
-        MouseListener popupListen = new PopupListener();
-        ShiTunes.library.getTable().addMouseListener(popupListen);
-
-        popup.add(popupAdd);
-        popup.add(popupDelete);
+    private void createMusicTablePopupMenu() {
+        musicTablePopupMenu = new JPopupMenu();
+        JMenuItem addMenuItem = new JMenuItem("Add Song");
+        JMenuItem deleteMenuItem = new JMenuItem("Delete Song(s)");
+        addMenuItem.addActionListener(new AddItemListener());
+        deleteMenuItem.addActionListener(new DeleteItemListener());
+        musicTablePopupMenu.add(addMenuItem);
+        musicTablePopupMenu.add(deleteMenuItem);
     }
 
-    /* ********* */
-    /* Listeners */
-    /* ********* */
+    /* ********************* */
+    /* Music Table Listeners */
+    /* ********************* */
 
     /**
-     * A Listener for the volume slider
+     * Handles clicks on items within the music table
+     *
      */
-    class VolumeListener implements ChangeListener {
-        public void stateChanged(ChangeEvent e) {
-            JSlider source = (JSlider)e.getSource();
-            if (!source.getValueIsAdjusting()) {
-                // volume converted to double value in range [0.0, 1.0]
-                // which is the range required by BasicPlayer setGain() method
-                double volume = source.getValue() / 100.00;
-                ShiTunes.player.adjustVolume(volume);
+    class TableItemSelectionListener implements ListSelectionListener {
+        @Override
+        public void valueChanged(ListSelectionEvent event) {
+            // set the currently selected row as the selected song
+            musicTable.setSelectedSong(musicTable.getTable().getSelectedRow());
+            // set the selection range (min == max if only one selected)
+            int min = ((DefaultListSelectionModel)event.getSource()).getMinSelectionIndex();
+            int max = ((DefaultListSelectionModel)event.getSource()).getMaxSelectionIndex();
+            musicTable.setSelectedSongRange(min, max);
+        }
+    }
+
+    /**
+     * Double Click Listener for the music table
+     * Plays the song that is double clicked.
+     */
+    class DoubleClickListener extends MouseAdapter {
+        public void mousePressed(MouseEvent me) {
+            if (me.getClickCount() == 2) {
+                // set selected song as currently loaded song for the player
+                int index = musicTable.getTable().getSelectedRow();
+                ShiTunes.player.setLoadedSong(index,
+                        musicTable.getTable().getValueAt(index, 5).toString());
+                ShiTunes.player.play();
             }
         }
     }
+
+    /**
+     * Popup listener for the right click menu
+     * <p>
+     * Interprets right mouse click to trigger
+     * showing the popup menu
+     */
+    class MusicTablePopupListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        public void maybeShowPopup(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                musicTablePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
+    }
+
+    /**
+     * Drop target listener on music table panel
+     * when song(s) are dragged from the computer's
+     * file browser into the music table they are added to the
+     * table
+     *
+     * Conditions:
+     * <ul>
+     * <li>If this is the Library table:  add songs to table & database</li>
+     * <li>If this is a Playlist table: add songs to table & playlist (& database if not already)</li>
+     * </ul>
+     */
+    class AddToTableDropTarget extends DropTarget {
+        @Override
+        public synchronized void drop(DropTargetDropEvent dtde) {
+            dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
+            Transferable t = dtde.getTransferable();
+            java.util.List fileList = null;
+            String filepath;
+            try {
+                fileList = (java.util.List) t.getTransferData(DataFlavor.javaFileListFlavor);
+                for(int i = 0; i < fileList.size(); i++) {
+                    Song song = new Song(fileList.get(i).toString());
+
+                    // If this is the main application window
+                    if(windowType == Window.MAIN) {
+                        // Try to add song to database
+                        if (ShiTunes.db.insertSong(song)) {
+                            // if song successfully added to database
+                            // add song to music table
+                            musicTable.addSongToTable(song);
+                        } else {
+                            // do nothing
+                            // song is already in database, and therefore is in music table already
+                        }
+                    } else {
+                        // if this is a playlist window
+                        // do something
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /* *********************** */
+    /* Control Panel Listeners */
+    /* *********************** */
 
     /**
      * A listener for the Previous Song action
@@ -308,7 +395,9 @@ public class GUI extends JFrame{
                     // play previous song
                     ShiTunes.player.stop();
                     if(ShiTunes.player.getLoadedSongIndex() > 0) {
-                        ShiTunes.player.setLoadedSong(ShiTunes.player.getLoadedSongIndex() - 1);
+                        int index = ShiTunes.player.getLoadedSongIndex() - 1;
+                        ShiTunes.player.setLoadedSong(index,
+                                musicTable.getTable().getValueAt(index, 5).toString());
                     }
                     ShiTunes.player.play();
                 }
@@ -326,13 +415,15 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            boolean selectedSongIsCurrent = ShiTunes.library.getSelectedSong().equals(ShiTunes.player.getLoadedSong());
+            boolean selectedSongIsCurrent = musicTable.getSelectedSong().equals(ShiTunes.player.getLoadedSong());
             if (selectedSongIsCurrent && ShiTunes.player.getState() == 4) {
                 // if selected song is current song on player
                 // and player.state == paused
                 ShiTunes.player.resume();
             } else {
-                ShiTunes.player.setLoadedSong(ShiTunes.library.getTable().getSelectedRow());
+                int index = musicTable.getTable().getSelectedRow();
+                ShiTunes.player.setLoadedSong(index,
+                        musicTable.getTable().getValueAt(index, 5).toString());
                 ShiTunes.player.play();
             }
         }
@@ -378,14 +469,16 @@ public class GUI extends JFrame{
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-             if(ShiTunes.player.getLoadedSongIndex() < ShiTunes.library.getTable().getRowCount() - 1) {
+             if(ShiTunes.player.getLoadedSongIndex() < musicTable.getTable().getRowCount() - 1) {
                 if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
                     // if player is currently playing/resumed
                     // stop current song
                     // decriment player.currentSongIndex
                     // play next song
                     ShiTunes.player.stop();
-                    ShiTunes.player.setLoadedSong(ShiTunes.player.getLoadedSongIndex() + 1);
+                    int index = ShiTunes.player.getLoadedSongIndex() + 1;
+                    ShiTunes.player.setLoadedSong(index,
+                            musicTable.getTable().getValueAt(index, 5).toString());
                     ShiTunes.player.play();
                 }
             }
@@ -393,18 +486,23 @@ public class GUI extends JFrame{
     }
 
     /**
-     * Exit item listener for the Main Menu.
-     * <p>
-     * When "Exit" is selected from the main menu the database connection
-     * is closed and the shiTunes program exits gracefully
-     *
+     * A Listener for the volume slider
      */
-    class ExitItemListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            ShiTunes.db.close();
-            System.exit(0);
+    class VolumeListener implements ChangeListener {
+        public void stateChanged(ChangeEvent e) {
+            JSlider source = (JSlider)e.getSource();
+            if (!source.getValueIsAdjusting()) {
+                // volume converted to double value in range [0.0, 1.0]
+                // which is the range required by BasicPlayer setGain() method
+                double volume = source.getValue() / 100.00;
+                ShiTunes.player.adjustVolume(volume);
+            }
         }
     }
+
+    /* ********************* */
+    /* Main Menu Listeners */
+    /* ********************* */
 
     /**
      * Open item listener for the Main Menu
@@ -418,16 +516,20 @@ public class GUI extends JFrame{
      */
     class OpenItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
+            JFileChooser chooser = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
             chooser.setFileFilter(filter);  //filters for mp3 files only
             //file chooser menu
             if (chooser.showDialog(shiTunesFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                if(!ShiTunes.library.songExistsInLibraryTable(selectedSong.getFilePath())) {
-                    DefaultTableModel model = (DefaultTableModel) ShiTunes.library.getTable().getModel();
+                if(!musicTable.songExistsInTable(selectedSong.getFilePath())) {
+                    DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
                     model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
                             selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
-                    ShiTunes.player.setLoadedSong(model.getRowCount() - 1);
+                    int index = model.getRowCount() - 1;
+                    ShiTunes.player.setLoadedSong(index,
+                            musicTable.getTable().getValueAt(index, 5).toString());
                     ShiTunes.player.play();
                 } else {
                     // TODO: display something that tells the user the song isn't being opened
@@ -446,14 +548,20 @@ public class GUI extends JFrame{
      */
     class AddItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
+            JFileChooser chooser = new JFileChooser();
             chooser.setFileFilter(filter);  //filters for mp3 files only
             //file chooser menu
             if (chooser.showDialog(shiTunesFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                ShiTunes.library.addSongToLibrary(selectedSong);
+                if(ShiTunes.db.insertSong(selectedSong)) {
+                    // if successfully inserted song into database
+                    musicTable.addSongToTable(selectedSong);
+                }
             }
         }
+
     }
 
     /**
@@ -461,28 +569,28 @@ public class GUI extends JFrame{
      * <p>
      * When "Delete Song" is selected from the main menu
      * the selected song is deleted from the database
-     * and removed from the Music Library listing
+     * and removed from the music table listing
      */
     class DeleteItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             // range[0] = min index of selected range
             // range[1] = max index of selected range
-            int min = ShiTunes.library.getSelectedSongRange()[0];
-            int max = ShiTunes.library.getSelectedSongRange()[1];
+            int min = musicTable.getSelectedSongRange()[0];
+            int max = musicTable.getSelectedSongRange()[1];
 
             // cycle through all selected songs and delete
             // one at a time
             // Note: starts at the bottom of the selected rows (ie. max index)
             // and works it's way up the list of selected rows
             for(int row = max; row >= min; row--) {
-                String selectedSong = ShiTunes.library.getTable().getValueAt(row, 5).toString();
+                String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
 
                 // Stop player if song being deleted is the current song on the player
                 if(selectedSong.equals(ShiTunes.player.getLoadedSong())) {
                     ShiTunes.player.stop();
                 }
 
-                DefaultTableModel model = (DefaultTableModel) ShiTunes.library.getTable().getModel();
+                DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
                 model.removeRow(row);
 
                 //Delete song from database by using filepath as an identifier
@@ -500,9 +608,7 @@ public class GUI extends JFrame{
      */
     class CreatePlaylistListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-
-            //Display message box with a textfield for user to type into
-            //addPlaylistMaster(String userInput)
+            // Display message box with a textfield for user to type into
             JFrame createPLFrame = new JFrame("Create New Playlist");
             String playlistName = (String)JOptionPane.showInputDialog(createPLFrame, "New playlist's name: ",
                     "Create New Playlist", JOptionPane.PLAIN_MESSAGE);
@@ -511,26 +617,16 @@ public class GUI extends JFrame{
     }
 
     /**
-     * Popup listener for the right click menu
+     * Exit item listener for the Main Menu.
      * <p>
-     * Interprets right mouse click to trigger
-     * showing the popup menu
+     * When "Exit" is selected from the main menu the database connection
+     * is closed and the shiTunes program exits gracefully
+     *
      */
-    class PopupListener extends MouseAdapter {
-        @Override
-        public void mousePressed(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        public void maybeShowPopup(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                popup.show(e.getComponent(), e.getX(), e.getY());
-            }
+    class ExitItemListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            ShiTunes.db.close();
+            System.exit(0);
         }
     }
 }

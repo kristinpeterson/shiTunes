@@ -7,19 +7,16 @@
 public class ShiTunes {
     static MusicPlayer player;
     static ShiBase db;
-    static MusicTable library;
+    static Window mainWindow;
 
     static {
         player = new MusicPlayer();
         db = new ShiBase();
-        library = new MusicTable();
+        mainWindow = new Window(Window.MAIN, new MusicTable());
     }
 
     public static void main(String[] args) {
-        // Init GUI
-        GUI gui = new GUI();
-
-        // Display GUI once initialized
-        gui.displayGUI();
+        // Display the main application window
+        mainWindow.display();
     }
 }

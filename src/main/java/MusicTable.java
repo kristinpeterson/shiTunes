@@ -20,7 +20,16 @@ public class MusicTable {
      *
      */
     public MusicTable(){
-        createLibrary();
+        // Build library table
+        // Instantiate library table model - this prevents individual cells from being editable
+        DefaultTableModel tableModel = new DefaultTableModel(ShiTunes.db.getAllSongs(), ShiBase.SONG_COLUMN_NAMES) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                //all cells false
+                return false;
+            }
+        };
+        table = new JTable(tableModel);
     }
 
     /**
@@ -31,16 +40,10 @@ public class MusicTable {
      * @param playlistName the playlist to populate the JTable with
      */
     public MusicTable(String playlistName) {
-        createPlaylist(playlistName);
-    }
-
-    /**
-     * Creates the ShiTunes music Library table
-     */
-    private void createLibrary() {
         // Build library table
         // Instantiate library table model - this prevents individual cells from being editable
-        DefaultTableModel tableModel = new DefaultTableModel(ShiTunes.db.getAllSongs(), ShiBase.SONG_COLUMN_NAMES) {
+        DefaultTableModel tableModel = new DefaultTableModel(
+                ShiTunes.db.getPlaylistSongs(playlistName), ShiBase.SONG_COLUMN_NAMES) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 //all cells false
@@ -58,17 +61,7 @@ public class MusicTable {
      * @return the JTable object containing the given playlist's songs
      */
     private void createPlaylist(String playlistName) {
-        // Build library table
-        // Instantiate library table model - this prevents individual cells from being editable
-        DefaultTableModel tableModel = new DefaultTableModel(
-                ShiTunes.db.getPlaylistSongs(playlistName), ShiBase.SONG_COLUMN_NAMES) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                //all cells false
-                return false;
-            }
-        };
-        table = new JTable(tableModel);
+
     }
 
     /**
@@ -85,16 +78,11 @@ public class MusicTable {
      *
      * @param song the song to add to the library/database
      */
-    public void addSongToLibrary(Song song) {
-        if(ShiTunes.db.insertSong(song)) {
-            // insert song was successful
-            // Add row to JTable
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
-            model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
-                    song.getYear(), song.getGenre(), song.getFilePath(), song.getComment()});
-        } else {
-            // TODO: display something that tells the user the song isn't being added
-        }
+    public void addSongToTable(Song song) {
+        // Add row to JTable
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
+                song.getYear(), song.getGenre(), song.getFilePath(), song.getComment()});
     }
 
     /**
@@ -113,7 +101,7 @@ public class MusicTable {
      */
     public void setSelectedSong(int index) {
         if(index >= 0) {
-            this.selectedSong = ShiTunes.library.getTable().getValueAt(index, 5).toString();
+            this.selectedSong = table.getValueAt(index, 5).toString();
         }
     }
 
@@ -142,7 +130,7 @@ public class MusicTable {
      * @param filePath the filepath of the song being searched for
      * @return true if the song exists in the library table
      */
-    public boolean songExistsInLibraryTable(String filePath) {
+    public boolean songExistsInTable(String filePath) {
         for(int i = 0; i < table.getRowCount(); i++) {
             if(filePath.equals(table.getValueAt(i, 5))) {
                 return true;

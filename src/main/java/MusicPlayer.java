@@ -163,10 +163,11 @@ public class MusicPlayer implements BasicPlayerListener {
      * Sets the currently loaded song using it's MusicLibrary index
      *
      * @param index the index of the song being loaded
+     * @param loadedSong the filepath of the song that is being loaded
      */
-    public void setLoadedSong(int index) {
+    public void setLoadedSong(int index, String loadedSong) {
         if(index >= 0) {
-            this.loadedSong = ShiTunes.library.getTable().getValueAt(index, 5).toString();
+            this.loadedSong = loadedSong;
             this.loadedSongIndex = index;
         }
     }
