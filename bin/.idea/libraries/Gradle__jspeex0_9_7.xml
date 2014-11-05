@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: jspeex0.9.7">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/jspeex0.9.7.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

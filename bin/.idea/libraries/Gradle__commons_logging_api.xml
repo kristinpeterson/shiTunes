@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: commons-logging-api">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/commons-logging-api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
