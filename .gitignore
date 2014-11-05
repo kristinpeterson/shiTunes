@@ -17,4 +17,5 @@
 
 # derby db files
 ShiBase/*
+bin/*
 derby.log
