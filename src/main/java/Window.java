@@ -29,11 +29,11 @@ public class Window extends JFrame {
     public static int MAIN = 0;
     public static int PLAYLIST = 1;
 
-    private MusicTable musicTable;
     private int windowType;
+    private JFrame windowFrame;
     private JPopupMenu musicTablePopupMenu;
-    private JFrame shiTunesFrame;
-    private JPanel controlPanel;
+    private MusicTable musicTable;
+
 
     /**
      * The Window default constructor
@@ -70,11 +70,11 @@ public class Window extends JFrame {
     }
 
     /**
-     * Displays the shiTunes GUI
+     * Displays the window
      *
      */
     public void display() {
-        shiTunesFrame.setVisible(true);
+        windowFrame.setVisible(true);
     }
 
     /**
@@ -84,13 +84,13 @@ public class Window extends JFrame {
      */
     private void buildWindowLayout(String windowTitle) {
         // Create outer shiTunes frame and set various parameters
-        shiTunesFrame = new JFrame();
-        shiTunesFrame.setTitle(windowTitle);
-        shiTunesFrame.setMinimumSize(new Dimension(900, 600));
-        shiTunesFrame.setLocationRelativeTo(null);
-        shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        windowFrame = new JFrame();
+        windowFrame.setTitle(windowTitle);
+        windowFrame.setMinimumSize(new Dimension(900, 600));
+        windowFrame.setLocationRelativeTo(null);
+        windowFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        // Create the main panel that resides within the shiTunesFrame
+        // Create the main panel that resides within the windowFrame
         // Layout: BoxLayout, X_AXIS
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
@@ -99,9 +99,6 @@ public class Window extends JFrame {
         // Layout: BoxLayout, Y_AXIS
         JPanel controlTablePanel = new JPanel();
         controlTablePanel.setLayout(new BoxLayout(controlTablePanel, BoxLayout.Y_AXIS));
-
-        // Instantiate the controlPanel (Buttons and Volume Slider)
-        controlPanel = new JPanel();
 
         // Create menuBar and add File menu
         JMenuBar menuBar = new JMenuBar();
@@ -118,11 +115,8 @@ public class Window extends JFrame {
         JPanel tablePanel = new JPanel(new GridLayout(1, 1));
         tablePanel.add(scrollPane);
 
-        // Add UI components to the window (buttons/volume slider)
-        buildControlPanel();
-
         // Build main panel
-        controlTablePanel.add(controlPanel);
+        controlTablePanel.add(getControlPanel());
         controlTablePanel.add(tablePanel);
         if(windowType == Window.MAIN) {
             mainPanel.add(getPlaylistPanel());
@@ -130,12 +124,20 @@ public class Window extends JFrame {
         mainPanel.add(controlTablePanel);
 
         // Add all GUI components to shiTunes application frame
-        shiTunesFrame.setJMenuBar(menuBar);
-        shiTunesFrame.setContentPane(mainPanel);
-        shiTunesFrame.pack();
-        shiTunesFrame.setLocationByPlatform(true);
+        windowFrame.setJMenuBar(menuBar);
+        windowFrame.setContentPane(mainPanel);
+        windowFrame.pack();
+        windowFrame.setLocationByPlatform(true);
     }
 
+    /**
+     * Builds the music table:
+     * <ul>
+     * <li>Sets various viewport parameters</li>
+     * <li>Assigns listeners</li>
+     * </ul>
+     *
+     */
     private void buildMusicTable() {
         musicTable.getTable().setPreferredScrollableViewportSize(new Dimension(500, 200));
         musicTable.getTable().setFillsViewportHeight(true);
@@ -177,8 +179,11 @@ public class Window extends JFrame {
     /**
      * Adds UI Components to shiTunes Window
      *
+     * @return the control JPanel
      */
-    private void buildControlPanel() {
+    private JPanel getControlPanel() {
+        // Instantiate the controlPanel (Buttons and Volume Slider)
+        JPanel controlPanel = new JPanel();
         try {
             // Initialize resources
             BufferedImage playResource = ImageIO.read(getClass().getResourceAsStream("/images/play.png"));
@@ -236,6 +241,7 @@ public class Window extends JFrame {
             // IOException thrown while reading resource files
             e.printStackTrace();
         }
+        return controlPanel;
     }
 
     /**
@@ -538,7 +544,7 @@ public class Window extends JFrame {
             FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
             chooser.setFileFilter(filter);  //filters for mp3 files only
             //file chooser menu
-            if (chooser.showDialog(shiTunesFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showDialog(windowFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
                 if(!musicTable.songExistsInTable(selectedSong.getFilePath())) {
@@ -570,7 +576,7 @@ public class Window extends JFrame {
             JFileChooser chooser = new JFileChooser();
             chooser.setFileFilter(filter);  //filters for mp3 files only
             //file chooser menu
-            if (chooser.showDialog(shiTunesFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showDialog(windowFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
                 if(ShiTunes.db.insertSong(selectedSong)) {
