@@ -16,12 +16,18 @@ public class MusicPlayer implements BasicPlayerListener {
      * <p>
      * State Codes:
      * <p>
+     * -1: UNKNOWN
      * 0: OPENING
      * 1: OPENED
      * 2: PLAYING
      * 3: STOPPED
      * 4: PAUSED
      * 5: RESUMED
+     * 6: SEEKING
+     * 7: SEEKED
+     * 8: EOM
+     * 9: PAN
+     * 10: GAIN
      *
      */
     private int state;
@@ -47,6 +53,22 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public int getVolume() {
         return (int)(player.getGainValue() * 100);
+    }
+
+    /**
+     * Adjusts the volume to the given value
+     * <p>
+     * Note: the volume value must be in range [0.0, 1.0] as per
+     * BasicPlayer setGain() method requirement
+     *
+     * @param volume the volume to change to (double value in range [0.0, 1.0]
+     */
+    public void adjustVolume(double volume) {
+        try {
+            player.setGain(volume);
+        } catch (BasicPlayerException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -120,22 +142,6 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
-     * Adjusts the volume to the given value
-     * <p>
-     * Note: the volume value must be in range [0.0, 1.0] as per
-     * BasicPlayer setGain() method requirement
-     *
-     * @param volume the volume to change to (double value in range [0.0, 1.0]
-     */
-    public void adjustVolume(double volume) {
-        try {
-            controller.setGain(volume);
-        } catch (BasicPlayerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * Gets the currently loaded song filename
      *
      * @return the currently loaded song's filename
@@ -203,34 +209,26 @@ public class MusicPlayer implements BasicPlayerListener {
     /**
      * Notification callback for basicplayer events such as opened
      * <p>
-     * States Codes:
-     * <p>
-     * 0: OPENING
-     * 1: OPENED
-     * 2: PLAYING
-     * 3: STOPPED
-     * 4: PAUSED
-     * 5: RESUMED
-     *
+     * States Codes - see state variable comment
      *
      * @param event the basicplayer event (OPENED, PAUSED, PLAYING, SEEKING...)
      */
     public void stateUpdated(BasicPlayerEvent event)
     {
         // Notification of BasicPlayer states (opened, playing, end of media, ...)
-        state = event.getCode();
+        if(event.getCode() != 10) {
+            // if state is not GAIN (due to volume change)
+            // update state code
+            state = event.getCode();
+        } else {
+            // do nothing, retain previous state
+        }
     }
 
     /**
      * Public accessor for player state
      * <p>
-     * States Codes:
-     * <p>
-     * 0: OPENING
-     * 1: OPENED
-     * 2: PLAYING
-     * 3: STOPPED
-     * 4: PAUSED
+     * States Codes - see state variable comment
      *
      * @return the players state
      */
