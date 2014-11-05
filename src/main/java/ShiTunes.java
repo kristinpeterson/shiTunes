@@ -7,12 +7,12 @@
 public class ShiTunes {
     static MusicPlayer player;
     static ShiBase db;
-    static MusicLibrary library;
+    static MusicTable library;
 
     static {
         player = new MusicPlayer();
         db = new ShiBase();
-        library = new MusicLibrary();
+        library = new MusicTable();
     }
 
     public static void main(String[] args) {
