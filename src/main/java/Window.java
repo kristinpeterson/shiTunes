@@ -36,20 +36,37 @@ public class Window extends JFrame {
     private JPanel controlPanel;
 
     /**
-     * The GUI default constructor
+     * The Window default constructor
      * <p>
-     * Builds the shiTunes GUI
-     *
-     * @param type the type of window to create
+     * Builds the shiTunes main application window
      */
-    public Window(int type, MusicTable table) {
+    public Window() {
+
+        // Set this Window instance's type to Window.MAIN
+        this.windowType = Window.MAIN;
+
         // Set this Window instance's table
-        this.musicTable = table;
+        this.musicTable = new MusicTable();
 
-        // Set this Window instance's type
-        this.windowType = type;
+        buildWindowLayout("shiTunes");
+    }
 
-        buildWindowLayout();
+    /**
+     * The Window overloaded constructor
+     * <p>
+     * Builds a shiTunes playlist window
+     *
+     * @param playlistName the name of the Playlist
+     */
+    public Window(String playlistName) {
+
+        // Set this Window instance's type to Window.PLAYLIST
+        this.windowType = Window.PLAYLIST;
+
+        // Set this Window instance's table
+        this.musicTable = new MusicTable();
+
+        buildWindowLayout(playlistName);
     }
 
     /**
@@ -63,11 +80,12 @@ public class Window extends JFrame {
     /**
      * Builds the Window's layout based on it's type
      *
+     * @param windowTitle the title of the window
      */
-    private void buildWindowLayout() {
+    private void buildWindowLayout(String windowTitle) {
         // Create outer shiTunes frame and set various parameters
         shiTunesFrame = new JFrame();
-        shiTunesFrame.setTitle("shiTunes");
+        shiTunesFrame.setTitle(windowTitle);
         shiTunesFrame.setMinimumSize(new Dimension(900, 600));
         shiTunesFrame.setLocationRelativeTo(null);
         shiTunesFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
