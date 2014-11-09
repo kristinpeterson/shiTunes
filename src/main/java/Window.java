@@ -1,9 +1,6 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -37,9 +34,12 @@ public class Window extends JFrame {
     private int windowType;
     private JFrame windowFrame;
     private MusicTable musicTable;
-    private JTree playlistTree;
     private JPopupMenu musicTablePopupMenu;
     private JMenu addSongToPlaylistSubMenu;
+    private JTree playlistPanelTree;
+    private DefaultMutableTreeNode playlistNode;
+    private String selectedPlaylist;
+    private JScrollPane musicTableScrollPane;
 
     /**
      * The Window default constructor
@@ -114,7 +114,7 @@ public class Window extends JFrame {
         buildMusicTable();
 
         // Instantiate scroll pane for table
-        JScrollPane musicTableScrollPane = new JScrollPane(musicTable.getTable());
+        musicTableScrollPane = new JScrollPane(musicTable.getTable());
 
         // Build main panel
         controlTablePanel.add(getControlPanel());
@@ -171,17 +171,39 @@ public class Window extends JFrame {
 
         // Create library and playlist nodes
         DefaultMutableTreeNode libraryNode = new DefaultMutableTreeNode ("Library");
-        DefaultMutableTreeNode playlistNode = new DefaultMutableTreeNode ("Playlists");
+        playlistNode = new DefaultMutableTreeNode ("Playlists");
+
+        updatePlaylistNode();
 
         // Add library and playlist nodes to the root
         root.add(libraryNode);
         root.add(playlistNode);
 
         // Create playlist panel tree
-        JTree tree = new JTree(root);
+        playlistPanelTree = new JTree(root);
 
         // Make the root node invisible
-        tree.setRootVisible(false);
+        playlistPanelTree.setRootVisible(false);
+
+        playlistPanelTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                String selection = e.getPath().getLastPathComponent().toString();
+                // If selection is not Playlist
+                // ie. "Library" or a playlist name was selected
+                if(!selection.equals("Playlists")) {
+                    // Update the table model and fire change
+                    musicTable.updateTableModel(selection);
+                    musicTableScrollPane.repaint();
+
+                    // If Library is not the selected item
+                    // Set selected playlist
+                    if(!selection.equals("Library")) {
+                        selectedPlaylist = e.getPath().toString();
+                    }
+                }
+            }
+        });
 
         // Set Icons
         try {
@@ -195,12 +217,28 @@ public class Window extends JFrame {
             renderer.setOpenIcon(minus);
             renderer.setClosedIcon(plus);
             renderer.setLeafIcon(music);
-            tree.setCellRenderer(renderer);
+            playlistPanelTree.setCellRenderer(renderer);
         } catch(IOException e) {
             e.printStackTrace();
         }
 
-        return new JScrollPane(tree);
+        return new JScrollPane(playlistPanelTree);
+    }
+
+    /**
+     * Updates the playlist node in the playlist panel tree
+     * with the most up to date list of playlist names from the database
+     *
+     */
+    private void updatePlaylistNode(){
+        ArrayList<String> playlistNames = ShiTunes.db.getPlaylistNames();
+
+        playlistNode.removeAllChildren();
+
+        for(String playlistName : playlistNames) {
+            DefaultMutableTreeNode playlist = new DefaultMutableTreeNode(playlistName);
+            playlistNode.add(playlist);
+        }
     }
 
     /**
@@ -317,7 +355,7 @@ public class Window extends JFrame {
         musicTablePopupMenu.add(addMenuItem);
         musicTablePopupMenu.add(deleteMenuItem);
         musicTablePopupMenu.add(addSongToPlaylistSubMenu);
-        updatePlaylistSubMenu();
+        updateAddPlaylistSubMenu();
     }
 
     /**
@@ -330,7 +368,7 @@ public class Window extends JFrame {
      * </ul>
      *
      */
-    private void updatePlaylistSubMenu() {
+    private void updateAddPlaylistSubMenu() {
         // Get updated list of playlist names from database
         ArrayList<String> playlistNames = ShiTunes.db.getPlaylistNames();
 
@@ -450,6 +488,83 @@ public class Window extends JFrame {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    /* ****************** */
+    /* Playlist Listeners */
+    /* ****************** */
+
+    /**
+     * Listener that creates a new Playlist
+     * <p>
+     * When 'Create Playlist' is selected from main menu,
+     * a popup appears to allow user to name their playlist.
+     * New, empty playlist is added to database.
+     * Window is refreshed to reflect changes.
+     */
+    class CreatePlaylistListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            // Display message box with a textfield for user to type into
+            JFrame createPLFrame = new JFrame("Create New Playlist");
+            String playlistName = (String) JOptionPane.showInputDialog(createPLFrame, "New playlist's name: ",
+                    "Create New Playlist", JOptionPane.PLAIN_MESSAGE);
+            ShiTunes.db.addPlaylist(playlistName);
+
+            //refresh GUI popupmenu playlist sub menu
+            updateAddPlaylistSubMenu();
+        }
+    }
+
+    /**
+     * Listener that deletes an existing Playlist
+     * <p>
+     * When 'Delete Playlist' is selected from highlighted side panel,
+     * a popup appears to confirm deletion.
+     * Window is refreshed to reflect changes.
+     *
+     */
+    class DeletePlaylistListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            JFrame confirmDeleteFrame = new JFrame("Delete Playlist");
+            int answer = JOptionPane.showConfirmDialog(confirmDeleteFrame,
+                    "Are you sure you want to delete this playlist?");
+            if (answer == JOptionPane.YES_OPTION) {
+                // Delete selected playlist from library
+                ShiTunes.db.deletePlaylist(selectedPlaylist);
+
+                // Refresh playlist panel tree
+                updatePlaylistNode();
+                // may need to add tree redraw or something
+
+                // Refresh GUI popupmenu playlist sub menu
+                updateAddPlaylistSubMenu();
+            }
+        }
+    }
+
+    /**
+     * Add song to playlist listener.
+     * <p>
+     * Adds the selected song to the given playlist
+     * Note: the playlist name must be passed as a parameter
+     *
+     */
+    class AddSongToPlaylistListener implements ActionListener {
+        private String playlist;
+
+        public AddSongToPlaylistListener(String s) {
+            playlist = s;
+        }
+
+        public void actionPerformed(ActionEvent event) {
+            int min = musicTable.getSelectedSongRange()[0];
+            int max = musicTable.getSelectedSongRange()[1];
+
+            for(int row = max; row >= min; row--) {
+                String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
+                ShiTunes.db.addSongToPlaylist(selectedSong, playlist);
             }
         }
     }
@@ -678,76 +793,6 @@ public class Window extends JFrame {
 
                 //Delete song from database by using filepath as an identifier
                 ShiTunes.db.deleteSong(selectedSong);
-            }
-        }
-    }
-
-    /**
-     * Listener that creates a new Playlist
-     * <p>
-     * When 'Create Playlist' is selected from main menu,
-     * a popup appears to allow user to name their playlist.
-     * New, empty playlist is added to database.
-     * Window is refreshed to reflect changes.
-     */
-    class CreatePlaylistListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            // Display message box with a textfield for user to type into
-            JFrame createPLFrame = new JFrame("Create New Playlist");
-            String playlistName = (String) JOptionPane.showInputDialog(createPLFrame, "New playlist's name: ",
-                    "Create New Playlist", JOptionPane.PLAIN_MESSAGE);
-            ShiTunes.db.addPlaylist(playlistName);
-
-            //refresh GUI popupmenu playlist sub menu
-            updatePlaylistSubMenu();
-        }
-    }
-
-    /**
-     * Listener that deletes an existing Playlist
-     * <p>
-     * When 'Delete Playlist' is selected from highlighted side panel,
-     * a popup appears to confirm deletion.
-     * Window is refreshed to reflect changes.
-     */
-    class DeletePlaylistListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            JFrame confirmDeleteFrame = new JFrame("Delete Playlist");
-            int answer = JOptionPane.showConfirmDialog(confirmDeleteFrame,
-                    "Are you sure you want to delete this playlist?");
-            if (answer == JOptionPane.YES_OPTION) {
-                //Get selected playlist name (from playlist panel) as string.
-                DefaultMutableTreeNode selectedElement = (DefaultMutableTreeNode)playlistTree.getSelectionPath().getLastPathComponent();
-                String selectedPlaylist = selectedElement.toString();
-                ShiTunes.db.deletePlaylist(selectedPlaylist);
-
-                //refresh GUI popupmenu playlist sub menu
-                updatePlaylistSubMenu();
-            }
-        }
-    }
-
-    /**
-     * Add song to playlist listener.
-     * <p>
-     * Adds the selected song to the given playlist
-     * Note: the playlist name must be passed as a parameter
-     *
-     */
-    class AddSongToPlaylistListener implements ActionListener {
-        private String playlist;
-
-        public AddSongToPlaylistListener(String s) {
-            playlist = s;
-        }
-
-        public void actionPerformed(ActionEvent event) {
-            int min = musicTable.getSelectedSongRange()[0];
-            int max = musicTable.getSelectedSongRange()[1];
-
-            for(int row = max; row >= min; row--) {
-                String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
-                ShiTunes.db.addSongToPlaylist(selectedSong, playlist);
             }
         }
     }

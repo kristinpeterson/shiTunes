@@ -54,6 +54,37 @@ public class MusicTable {
     }
 
     /**
+     * Updates the MusicTable model based on given model input
+     * where model is either "Library" or "[playlist-name]"
+     *
+     * @param model
+     */
+    public void updateTableModel(String model) {
+        DefaultTableModel tableModel;
+        if (model.equals("Library")) {
+            tableModel = new DefaultTableModel(
+                    ShiTunes.db.getAllSongs(), ShiBase.SONG_COLUMN_NAMES) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    //all cells false
+                    return false;
+                }
+            };
+        } else {
+            tableModel = new DefaultTableModel(
+                    ShiTunes.db.getPlaylistSongs(model), ShiBase.SONG_COLUMN_NAMES) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    //all cells false
+                    return false;
+                }
+            };
+        }
+        tableModel.fireTableDataChanged();
+        table.setModel(tableModel);
+    }
+
+    /**
      * Creates a JTable containing the songs
      * associated with the given playlist
      *
