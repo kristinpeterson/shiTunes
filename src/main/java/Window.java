@@ -7,13 +7,17 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -161,16 +165,42 @@ public class Window extends JFrame {
      *
      * @return the playlist panel containing the Library and Playlist branches
      */
-    private JPanel getPlaylistPanel() {
-        // Creates Library tree and Playlist tree to the side column of shiTunes
-        JPanel playlistPanel = new JPanel(new GridLayout(2,1));
-        DefaultMutableTreeNode libraryTreeNode = new DefaultMutableTreeNode ("Library");
-        DefaultMutableTreeNode playlistTreeNode = new DefaultMutableTreeNode ("Playlists");
-        playlistTree = new JTree(playlistTreeNode);     //MOVED DECLARATION TO LINE 35
-        JTree libraryTree = new JTree(libraryTreeNode);
-        playlistPanel.add(libraryTree);
-        playlistPanel.add(playlistTree);
-        return playlistPanel;
+    private JScrollPane getPlaylistPanel() {
+        // Create the root node
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
+
+        // Create library and playlist nodes
+        DefaultMutableTreeNode libraryNode = new DefaultMutableTreeNode ("Library");
+        DefaultMutableTreeNode playlistNode = new DefaultMutableTreeNode ("Playlists");
+
+        // Add library and playlist nodes to the root
+        root.add(libraryNode);
+        root.add(playlistNode);
+
+        // Create playlist panel tree
+        JTree tree = new JTree(root);
+
+        // Make the root node invisible
+        tree.setRootVisible(false);
+
+        // Set Icons
+        try {
+            BufferedImage musicResource = ImageIO.read(getClass().getResourceAsStream("/images/music.png"));
+            BufferedImage plusResource = ImageIO.read(getClass().getResourceAsStream("/images/plus.png"));
+            BufferedImage minusResource = ImageIO.read(getClass().getResourceAsStream("/images/minus.png"));
+            ImageIcon music = new ImageIcon(musicResource);
+            ImageIcon plus = new ImageIcon(plusResource);
+            ImageIcon minus = new ImageIcon(minusResource);
+            DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+            renderer.setOpenIcon(minus);
+            renderer.setClosedIcon(plus);
+            renderer.setLeafIcon(music);
+            tree.setCellRenderer(renderer);
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+
+        return new JScrollPane(tree);
     }
 
     /**
