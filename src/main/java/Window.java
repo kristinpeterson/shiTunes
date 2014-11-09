@@ -110,16 +110,11 @@ public class Window extends JFrame {
         buildMusicTable();
 
         // Instantiate scroll pane for table
-        JScrollPane scrollPane = new JScrollPane(musicTable.getTable());
-
-        // Instantiate table panel and
-        // Add scroll pane (library table) to library panel
-        JPanel tablePanel = new JPanel(new GridLayout(1, 1));
-        tablePanel.add(scrollPane);
+        JScrollPane musicTableScrollPane = new JScrollPane(musicTable.getTable());
 
         // Build main panel
         controlTablePanel.add(getControlPanel());
-        controlTablePanel.add(tablePanel);
+        controlTablePanel.add(musicTableScrollPane);
         if(windowType == Window.MAIN) {
             mainPanel.add(getPlaylistPanel());
         }
