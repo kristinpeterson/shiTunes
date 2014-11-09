@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.util.ArrayList;
 
 /**
  * The ShiBase class contains methods for connecting to
@@ -356,6 +357,11 @@ public class ShiBase {
     /* ********************** */
     /* ********************** */
 
+    //Accessor method for returning names of existing playlists
+    //public ArrayList<String> getPlaylistNames() {
+    //    return playlistNames;
+    //}
+
     /**
      * Create the PLAYLIST table
      *
@@ -391,6 +397,8 @@ public class ShiBase {
             stmt.setString(1, playlist);
             stmt.execute();
             stmt.close();
+
+            //playlistNames.add(playlist);
         }
         catch (SQLException sqlExcept) {
             sqlExcept.printStackTrace();
@@ -413,6 +421,8 @@ public class ShiBase {
             stmt.setString(1, playlist);
             stmt.execute();
             stmt.close();
+
+            //playlistNames.remove(playlist);
             return true;
         }
         catch (SQLException sqlExcept) {
