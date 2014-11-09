@@ -34,12 +34,8 @@ public class Window extends JFrame {
     private JFrame windowFrame;
     private MusicTable musicTable;
     private JTree playlistTree;
-
     private JPopupMenu musicTablePopupMenu;
-    private JMenuItem addSongToPlaylistItem; //NOTE: declaration was moved so PopupMenu methods can access scope
-
-    //Array of menuitems for the playlist PopupMenu
-    private ArrayList<PlaylistPopItem> pl_popItems = new ArrayList<PlaylistPopItem>();
+    private JMenu addSongToPlaylistSubMenu;
 
     /**
      * The Window default constructor
@@ -53,11 +49,6 @@ public class Window extends JFrame {
 
         // Set this Window instance's table
         this.musicTable = new MusicTable();
-
-        addSongToPlaylistItem = new JMenuItem("Add Song to Playlist");
-
-        // Load previously existing playlists to JPopUpMenu
-        loadExistingPlaylists();
 
         buildWindowLayout("shiTunes");
     }
@@ -78,17 +69,6 @@ public class Window extends JFrame {
         this.musicTable = new MusicTable();
 
         buildWindowLayout(playlistName);
-    }
-
-    //Used to instantiate object that connects the menuitem to a specific playlist (for jpopupmenu)
-    public class PlaylistPopItem {
-        private JMenuItem pl_menuitem;
-        private String pl_name;
-
-        public PlaylistPopItem(String s) {
-            pl_menuitem = new JMenuItem();
-            pl_name = s;
-        }
     }
 
     /**
@@ -171,7 +151,6 @@ public class Window extends JFrame {
 
         // Create right-click popup menu and set popup listener
         createMusicTablePopupMenu();
-        updatePopupMenu();  //update with previously existing playlists
         musicTable.getTable().addMouseListener(new MusicTablePopupListener());
 
         // Add double click listener to play selected song.
@@ -280,8 +259,8 @@ public class Window extends JFrame {
         JMenuItem createPlaylistItem = new JMenuItem("Create Playlist");
         JMenuItem exitItem = new JMenuItem("Exit");
 
-        addItem.addActionListener(new AddItemListener());
-        deleteItem.addActionListener(new DeleteItemListener());
+        addItem.addActionListener(new AddSongListener());
+        deleteItem.addActionListener(new DeleteSongListener());
         openItem.addActionListener(new OpenItemListener());
         createPlaylistItem.addActionListener(new CreatePlaylistListener());
         exitItem.addActionListener(new ExitItemListener());
@@ -305,44 +284,43 @@ public class Window extends JFrame {
         musicTablePopupMenu = new JPopupMenu();
         JMenuItem addMenuItem = new JMenuItem("Add Song");
         JMenuItem deleteMenuItem = new JMenuItem("Delete Song(s)");
+        addSongToPlaylistSubMenu = new JMenu("Add Song to Playlist");
 
-        addMenuItem.addActionListener(new AddItemListener());
-        deleteMenuItem.addActionListener(new DeleteItemListener());
+        addMenuItem.addActionListener(new AddSongListener());
+        deleteMenuItem.addActionListener(new DeleteSongListener());
 
         musicTablePopupMenu.add(addMenuItem);
         musicTablePopupMenu.add(deleteMenuItem);
-        musicTablePopupMenu.add(addSongToPlaylistItem);
+        musicTablePopupMenu.add(addSongToPlaylistSubMenu);
+        updatePlaylistSubMenu();
     }
 
-    //Redraw the popup GUI
-    private void updatePopupMenu() {
-        for (PlaylistPopItem i : pl_popItems) {
-            addSongToPlaylistItem.add(i.pl_menuitem);
+    /**
+     * Updates the playlist sub menu in the music table's popup menu:
+     * <ul>
+     *     <li>Gets an updated list of playlist names from database</li>
+     *     <li>Removes all items from the playlist sub menu</li>
+     *     <li>Repopulate the playlist sub menu</li>
+     *     <li>Repaint the music table popup menu (in which the playlist sub menu resides</li>
+     * </ul>
+     *
+     */
+    private void updatePlaylistSubMenu() {
+        // Get updated list of playlist names from database
+        ArrayList<String> playlistNames = ShiTunes.db.getPlaylistNames();
+
+        // Remove all items from music table popup menu - playlist sub menu
+        addSongToPlaylistSubMenu.removeAll();
+
+        // Repopulate music table popup menu - playlist sub menu
+        for (String playlistName : playlistNames) {
+            JMenuItem item = new JMenuItem(playlistName);
+            item.addActionListener(new AddSongToPlaylistListener(playlistName));
+            addSongToPlaylistSubMenu.add(item);
         }
-        musicTablePopupMenu.revalidate();
+
+        // Repaint the popup menu
         musicTablePopupMenu.repaint();
-    }
-
-    //Activate new playlist menuitem to popupmenu.
-    //Adds actionlistener to add the song to the chosen playlist
-    private void addPopupMenu(String pl_name) {
-        pl_popItems.add(new PlaylistPopItem(pl_name));
-
-        pl_popItems.get(pl_popItems.size()-1).pl_menuitem.addActionListener(new addSongToPlaylistListener(pl_name));
-    }
-
-    //Deactivate the deleted playlist menuitem from popupmenu
-    private void deletePopupMenu(String playlist) {
-        for (PlaylistPopItem i : pl_popItems) {
-            if (i.pl_name.equals(playlist)) {
-                pl_popItems.remove(i);
-            }
-        }
-    }
-
-    //TODO: Helper function that loads ArrayList pl_popitems with existing playlists
-    private void loadExistingPlaylists() {
-        //pl_popItems.add(PlaylistPopItem);
     }
 
     /* ********************* */
@@ -627,7 +605,7 @@ public class Window extends JFrame {
      * when adding the song to the database (such as the song
      * already existing)
      */
-    class AddItemListener implements ActionListener {
+    class AddSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
             JFileChooser chooser = new JFileChooser();
@@ -651,7 +629,7 @@ public class Window extends JFrame {
      * the selected song is deleted from the database
      * and removed from the music table listing
      */
-    class DeleteItemListener implements ActionListener {
+    class DeleteSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             // range[0] = min index of selected range
             // range[1] = max index of selected range
@@ -695,8 +673,8 @@ public class Window extends JFrame {
                     "Create New Playlist", JOptionPane.PLAIN_MESSAGE);
             ShiTunes.db.addPlaylist(playlistName);
 
-            addPopupMenu(playlistName); //add the new playlist to popupmenu
-            updatePopupMenu();          //refresh GUI popupmenu
+            //refresh GUI popupmenu playlist sub menu
+            updatePlaylistSubMenu();
         }
     }
 
@@ -718,18 +696,23 @@ public class Window extends JFrame {
                 String selectedPlaylist = selectedElement.toString();
                 ShiTunes.db.deletePlaylist(selectedPlaylist);
 
-                deletePopupMenu(selectedPlaylist);
-                updatePopupMenu();          //refresh GUI popupmenu
+                //refresh GUI popupmenu playlist sub menu
+                updatePlaylistSubMenu();
             }
         }
     }
 
-    //adds songs from table to playlist
-    //takes parameter playlist's name via constructor
-    class addSongToPlaylistListener implements ActionListener {
+    /**
+     * Add song to playlist listener.
+     * <p>
+     * Adds the selected song to the given playlist
+     * Note: the playlist name must be passed as a parameter
+     *
+     */
+    class AddSongToPlaylistListener implements ActionListener {
         private String playlist;
 
-        public addSongToPlaylistListener(String s) {
+        public AddSongToPlaylistListener(String s) {
             playlist = s;
         }
 

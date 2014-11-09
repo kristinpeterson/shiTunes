@@ -357,10 +357,29 @@ public class ShiBase {
     /* ********************** */
     /* ********************** */
 
-    //Accessor method for returning names of existing playlists
-    //public ArrayList<String> getPlaylistNames() {
-    //    return playlistNames;
-    //}
+    /**
+     * Accessor method to get all playlist names
+     *
+     * @return an ArrayList of playlist names as Strings
+     */
+    public ArrayList<String> getPlaylistNames() {
+        ArrayList<String> playlistNames = new ArrayList<String>();
+        try {
+            // Get all playlist names
+            String query = "SELECT playlistName FROM " + PLAYLIST_TABLE +
+                    " ORDER BY playlistName ASC";
+            stmt = conn.prepareStatement(query);
+            ResultSet playlistRS = stmt.executeQuery();
+            while(playlistRS.next()) {
+                playlistNames.add(playlistRS.getString("playlistName"));
+            }
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return playlistNames;
+    }
 
     /**
      * Create the PLAYLIST table
