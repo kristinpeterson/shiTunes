@@ -32,10 +32,12 @@ public class Window extends JFrame {
     private JFrame windowFrame;
     private MusicTable musicTable;
     private JPopupMenu musicTablePopupMenu;
+    private JPopupMenu playlistPopupMenu;
     private JMenu addSongToPlaylistSubMenu;
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
     private JScrollPane musicTableScrollPane;
+    private JTree playlistPanelTree;
     private MusicTablePopupListener musicTablePopupListener = new MusicTablePopupListener();
 
     /**
@@ -110,6 +112,9 @@ public class Window extends JFrame {
         // Build the music table
         buildMusicTable();
 
+        //creates the right click menu for the playlists
+        createPlaylistPopupMenu();
+
         // Instantiate scroll pane for table
         musicTableScrollPane = new JScrollPane(musicTable.getTable());
 
@@ -177,8 +182,9 @@ public class Window extends JFrame {
         root.add(playlistNode);
 
         // Create playlist panel tree
-        JTree playlistPanelTree = new JTree(root);
-
+         playlistPanelTree = new JTree(root);
+        //adds a listener to the tree in order to allow for right click menu
+        playlistPanelTree.addMouseListener(new PlaylistPopupListener());
         // Make the root node invisible
         playlistPanelTree.setRootVisible(false);
 
@@ -379,6 +385,18 @@ public class Window extends JFrame {
         musicTablePopupMenu.add(addSongToPlaylistSubMenu);
         updateAddPlaylistSubMenu();
     }
+    /**
+     * Initializes a popup menu when a user right clicks for the playlist nodes.
+     *
+     * When the user right clicks on a tree node, the menu appears.
+     */
+    private void createPlaylistPopupMenu() {
+        playlistPopupMenu = new JPopupMenu();
+        JMenuItem deletePlaylist = new JMenuItem("Delete Playlist");
+        deletePlaylist.addActionListener(new DeletePlaylistListener());
+        playlistPopupMenu.add(deletePlaylist);
+
+    }
 
     /**
      * Updates the playlist sub menu in the music table's popup menu:
@@ -406,6 +424,7 @@ public class Window extends JFrame {
 
         // Repaint the popup menu
         musicTablePopupMenu.repaint();
+
     }
 
     /* ********************* */
@@ -464,6 +483,26 @@ public class Window extends JFrame {
         public void maybeShowPopup(MouseEvent e) {
             if (e.isPopupTrigger()) {
                 musicTablePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
+    }
+    class PlaylistPopupListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        public void maybeShowPopup(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                JTree tree = (JTree)e.getSource();
+                int row = tree.getClosestRowForLocation(e.getX(), e.getY());
+                tree.setSelectionRow(row);
+                playlistPopupMenu.show(e.getComponent(), e.getX(), e.getY());
             }
         }
     }
@@ -537,6 +576,7 @@ public class Window extends JFrame {
 
             //refresh GUI popupmenu playlist sub menu
             updateAddPlaylistSubMenu();
+            //updatePlaylistNode();
         }
     }
 
