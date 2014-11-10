@@ -777,8 +777,21 @@ public class Window extends JFrame {
             if (chooser.showDialog(windowFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                if(ShiTunes.db.insertSong(selectedSong)) {
-                    // if successfully inserted song into database
+                if(windowType == Window.MAIN && musicTable.type == MusicTable.LIBRARY) {
+                    // If this is the main application window & the music table == library
+                    // Only add song to library table if it is not already present in db
+                    if (ShiTunes.db.insertSong(selectedSong)) {
+                        // if song successfully added to database
+                        // add song to music library table
+                        musicTable.addSongToTable(selectedSong);
+                    }
+                } else if(windowType == Window.MAIN && musicTable.type == MusicTable.PLAYLIST){
+                    // If this is the main application window & the music table == playlist
+                    // Try to add song to db (if already in db it won't be added)
+                    ShiTunes.db.insertSong(selectedSong);
+                    // Add song to the playlist
+                    ShiTunes.db.addSongToPlaylist(selectedSong.getFilePath(), selectedPlaylist);
+                    // Add song to playlist table
                     musicTable.addSongToTable(selectedSong);
                 }
             }
@@ -814,7 +827,7 @@ public class Window extends JFrame {
                 DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
                 model.removeRow(row);
 
-                //Delete song from database by using filepath as an identifier
+                // Delete song from database by using filepath as an identifier
                 ShiTunes.db.deleteSong(selectedSong);
             }
         }
