@@ -11,10 +11,7 @@ import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +36,7 @@ public class Window extends JFrame {
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
     private JScrollPane musicTableScrollPane;
+    private MusicTablePopupListener musicTablePopupListener = new MusicTablePopupListener();
 
     /**
      * The Window default constructor
@@ -149,7 +147,7 @@ public class Window extends JFrame {
 
         // Create right-click popup menu and set popup listener
         createMusicTablePopupMenu();
-        musicTable.getTable().addMouseListener(new MusicTablePopupListener());
+        musicTable.getTable().addMouseListener(musicTablePopupListener);
 
         // Add double click listener to play selected song.
         musicTable.getTable().addMouseListener(new DoubleClickListener());
@@ -193,13 +191,38 @@ public class Window extends JFrame {
                 if(!selection.equals("Playlists")) {
                     // Update the table model and fire change
                     musicTable.updateTableModel(selection);
-                    musicTableScrollPane.repaint();
 
-                    // If Library is not the selected item
-                    // Set selected playlist
+                    /*
+                     * This block of code is a hackey way of making the popup menu
+                     * not display in the playlist table.  The popup menu within the
+                     * playlist table is not a requirement, and the options in that menu
+                     * do not work properly from within the playlist table, so for now
+                     * whenever the user switches to a playlist table the popup menu is removed
+                     * and when they switch back to the library table the popup menu is added back
+                     */
+                    // Determine if popup listener is present
+                    boolean listenerFound = false;
+                    MouseListener[] mouseListeners = musicTable.getTable().getMouseListeners();
+                    for(MouseListener mouseListener : mouseListeners) {
+                        if(mouseListener.getClass().equals(musicTablePopupListener.getClass())) {
+                            listenerFound = true;
+                        }
+                    }
+                    // Reinstate the popup listener if it was removed previously
+                    if(!listenerFound){
+                        musicTable.getTable().addMouseListener(musicTablePopupListener);
+                    }
+
+                    // If Library is not the selected item, a playlist name was selected
+                    // Remove popup menu listener and set selected playlist
                     if(!selection.equals("Library")) {
+                        // remove the popup menu listener for playlist table
+                        musicTable.getTable().removeMouseListener(musicTablePopupListener);
                         selectedPlaylist = selection;
                     }
+
+                    // Repaint the music table scroll pane
+                    musicTableScrollPane.repaint();
                 }
             }
         });
