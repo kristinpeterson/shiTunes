@@ -36,7 +36,6 @@ public class Window extends JFrame {
     private MusicTable musicTable;
     private JPopupMenu musicTablePopupMenu;
     private JMenu addSongToPlaylistSubMenu;
-    private JTree playlistPanelTree;
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
     private JScrollPane musicTableScrollPane;
@@ -180,7 +179,7 @@ public class Window extends JFrame {
         root.add(playlistNode);
 
         // Create playlist panel tree
-        playlistPanelTree = new JTree(root);
+        JTree playlistPanelTree = new JTree(root);
 
         // Make the root node invisible
         playlistPanelTree.setRootVisible(false);
@@ -199,7 +198,7 @@ public class Window extends JFrame {
                     // If Library is not the selected item
                     // Set selected playlist
                     if(!selection.equals("Library")) {
-                        selectedPlaylist = e.getPath().toString();
+                        selectedPlaylist = selection;
                     }
                 }
             }
@@ -463,27 +462,28 @@ public class Window extends JFrame {
         public synchronized void drop(DropTargetDropEvent dtde) {
             dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
             Transferable t = dtde.getTransferable();
-            java.util.List fileList = null;
-            String filepath;
+            java.util.List fileList;
             try {
                 fileList = (java.util.List) t.getTransferData(DataFlavor.javaFileListFlavor);
-                for(int i = 0; i < fileList.size(); i++) {
-                    Song song = new Song(fileList.get(i).toString());
+                for(Object file : fileList) {
+                    Song song = new Song(file.toString());
 
-                    // If this is the main application window
-                    if(windowType == Window.MAIN) {
-                        // Try to add song to database
+                    if(windowType == Window.MAIN && musicTable.type == MusicTable.LIBRARY) {
+                        // If this is the main application window & the music table == library
+                        // Only add song to library table if it is not already present in db
                         if (ShiTunes.db.insertSong(song)) {
                             // if song successfully added to database
-                            // add song to music table
+                            // add song to music library table
                             musicTable.addSongToTable(song);
-                        } else {
-                            // do nothing
-                            // song is already in database, and therefore is in music table already
                         }
-                    } else {
-                        // if this is a playlist window
-                        // do something
+                    } else if(windowType == Window.MAIN && musicTable.type == MusicTable.PLAYLIST){
+                        // If this is the main application window & the music table == playlist
+                        // Try to add song to db (if already in db it won't be added)
+                        ShiTunes.db.insertSong(song);
+                        // Add song to the playlist
+                        ShiTunes.db.addSongToPlaylist(song.getFilePath(), selectedPlaylist);
+                        // Add song to playlist table
+                        musicTable.addSongToTable(song);
                     }
                 }
             } catch (Exception e) {

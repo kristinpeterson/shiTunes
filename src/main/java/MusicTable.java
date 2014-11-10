@@ -9,6 +9,11 @@ import javax.swing.table.DefaultTableModel;
  */
 public class MusicTable {
 
+    // To indicate MusicTable type
+    public static int LIBRARY = 0;
+    public static int PLAYLIST = 1;
+    public int type;
+
     private JTable table;
     private String selectedSong;
     private int[] selectedSongRange;    // [min-index, max-index]
@@ -30,6 +35,7 @@ public class MusicTable {
             }
         };
         table = new JTable(tableModel);
+        type = MusicTable.LIBRARY;
     }
 
     /**
@@ -51,6 +57,7 @@ public class MusicTable {
             }
         };
         table = new JTable(tableModel);
+        type = MusicTable.PLAYLIST;
     }
 
     /**
@@ -61,38 +68,25 @@ public class MusicTable {
      */
     public void updateTableModel(String model) {
         DefaultTableModel tableModel;
+        Object[][] songs;
         if (model.equals("Library")) {
-            tableModel = new DefaultTableModel(
-                    ShiTunes.db.getAllSongs(), ShiBase.SONG_COLUMN_NAMES) {
-                @Override
-                public boolean isCellEditable(int row, int column) {
-                    //all cells false
-                    return false;
-                }
-            };
+            // update with library contents
+            songs = ShiTunes.db.getAllSongs();
+            type = MusicTable.LIBRARY;
         } else {
-            tableModel = new DefaultTableModel(
-                    ShiTunes.db.getPlaylistSongs(model), ShiBase.SONG_COLUMN_NAMES) {
-                @Override
-                public boolean isCellEditable(int row, int column) {
-                    //all cells false
-                    return false;
-                }
-            };
+            // update with playlist contents
+            songs = ShiTunes.db.getPlaylistSongs(model);
+            type = MusicTable.PLAYLIST;
         }
+        tableModel = new DefaultTableModel(songs, ShiBase.SONG_COLUMN_NAMES) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                //all cells false
+                return false;
+            }
+        };
         tableModel.fireTableDataChanged();
         table.setModel(tableModel);
-    }
-
-    /**
-     * Creates a JTable containing the songs
-     * associated with the given playlist
-     *
-     * @param playlistName the name of the playlist to populate the table
-     * @return the JTable object containing the given playlist's songs
-     */
-    private void createPlaylist(String playlistName) {
-
     }
 
     /**
