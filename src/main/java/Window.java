@@ -5,6 +5,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -576,7 +577,8 @@ public class Window extends JFrame {
 
             //refresh GUI popupmenu playlist sub menu
             updateAddPlaylistSubMenu();
-            //updatePlaylistNode();
+            updatePlaylistNode();
+            ((DefaultTreeModel)playlistPanelTree.getModel()).reload();
         }
     }
 
@@ -600,9 +602,10 @@ public class Window extends JFrame {
                 // Refresh playlist panel tree
                 updatePlaylistNode();
                 // may need to add tree redraw or something
-
+                ((DefaultTreeModel)playlistPanelTree.getModel()).reload();
                 // Refresh GUI popupmenu playlist sub menu
                 updateAddPlaylistSubMenu();
+
             }
         }
     }
