@@ -108,10 +108,6 @@ public class MusicTable {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
                 song.getYear(), song.getGenre(), song.getFilePath(), song.getComment()});
-
-        // Update table model
-        //model.fireTableDataChanged();
-        //table.setModel(model);
     }
 
     /**
