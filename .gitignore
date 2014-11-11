@@ -14,6 +14,8 @@
 
 # intellij
 .idea/workspace.xml
+.idea/tasks.xml
+.idea/dataSources.*
 
 # derby db files
 ShiBase/*

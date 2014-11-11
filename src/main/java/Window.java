@@ -31,15 +31,18 @@ public class Window extends JFrame {
 
     private int windowType;
     private JFrame windowFrame;
+    private JScrollPane musicTableScrollPane;
+
     private MusicTable musicTable;
     private JPopupMenu musicTablePopupMenu;
-    private JPopupMenu playlistPopupMenu;
     private JMenu addSongToPlaylistSubMenu;
+    private MusicTablePopupListener musicTablePopupListener = new MusicTablePopupListener();
+
+    private JPopupMenu playlistPopupMenu;
+
+    private JTree playlistPanelTree;
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
-    private JScrollPane musicTableScrollPane;
-    private JTree playlistPanelTree;
-    private MusicTablePopupListener musicTablePopupListener = new MusicTablePopupListener();
 
     /**
      * The Window default constructor
@@ -69,8 +72,11 @@ public class Window extends JFrame {
         // Set this Window instance's type to Window.PLAYLIST
         this.windowType = Window.PLAYLIST;
 
+        // Set selected playlist
+        this.selectedPlaylist = playlistName;
+
         // Set this Window instance's table
-        this.musicTable = new MusicTable();
+        this.musicTable = new MusicTable(playlistName);
 
         buildWindowLayout(playlistName);
     }
@@ -94,7 +100,12 @@ public class Window extends JFrame {
         windowFrame.setTitle(windowTitle);
         windowFrame.setMinimumSize(new Dimension(900, 600));
         windowFrame.setLocationRelativeTo(null);
-        windowFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        if(windowType == Window.MAIN) {
+            windowFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        } else if(windowType == Window.PLAYLIST) {
+            windowFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        }
 
         // Create the main panel that resides within the windowFrame
         // Layout: BoxLayout, X_AXIS
@@ -161,7 +172,7 @@ public class Window extends JFrame {
         musicTable.getTable().addMouseListener(new DoubleClickListener());
 
         // Add drop target on table
-        // enabling drag and drop of files into library
+        // enabling drag and drop of files into table
         musicTable.getTable().setDropTarget(new AddToTableDropTarget());
     }
 
@@ -325,7 +336,9 @@ public class Window extends JFrame {
         menu.add(openItem);
         menu.add(addItem);
         menu.add(deleteItem);
-        menu.add(createPlaylistItem);
+        if(windowType == Window.MAIN) {
+            menu.add(createPlaylistItem);
+        }
         menu.add(exitItem);
         return menu;
     }
@@ -348,7 +361,9 @@ public class Window extends JFrame {
 
         musicTablePopupMenu.add(addMenuItem);
         musicTablePopupMenu.add(deleteMenuItem);
-        musicTablePopupMenu.add(addSongToPlaylistSubMenu);
+        if(windowType == Window.MAIN) {
+            musicTablePopupMenu.add(addSongToPlaylistSubMenu);
+        }
         updateAddPlaylistSubMenu();
     }
     /**
@@ -359,9 +374,11 @@ public class Window extends JFrame {
     private void createPlaylistPopupMenu() {
         playlistPopupMenu = new JPopupMenu();
         JMenuItem deletePlaylist = new JMenuItem("Delete Playlist");
+        JMenuItem newWindow = new JMenuItem("Open Playlist in New Window");
         deletePlaylist.addActionListener(new DeletePlaylistListener());
+        newWindow.addActionListener(new NewPlaylistWindowListener());
         playlistPopupMenu.add(deletePlaylist);
-
+        playlistPopupMenu.add(newWindow);
     }
 
     /**
@@ -476,7 +493,7 @@ public class Window extends JFrame {
                 for(Object file : fileList) {
                     Song song = new Song(file.toString());
 
-                    if(windowType == Window.MAIN && musicTable.type == MusicTable.LIBRARY) {
+                    if(musicTable.type == MusicTable.LIBRARY) {
                         // If this is the main application window & the music table == library
                         // Only add song to library table if it is not already present in db
                         if (ShiTunes.db.insertSong(song)) {
@@ -484,12 +501,14 @@ public class Window extends JFrame {
                             // add song to music library table
                             musicTable.addSongToTable(song);
                         }
-                    } else if(windowType == Window.MAIN && musicTable.type == MusicTable.PLAYLIST){
+                    } else if(musicTable.type == MusicTable.PLAYLIST){
                         // If this is the main application window & the music table == playlist
                         // Try to add song to db (if already in db it won't be added)
                         ShiTunes.db.insertSong(song);
+
                         // Add song to the playlist
                         ShiTunes.db.addSongToPlaylist(song.getFilePath(), selectedPlaylist);
+
                         // Add song to playlist table
                         musicTable.addSongToTable(song);
                     }
@@ -500,9 +519,9 @@ public class Window extends JFrame {
         }
     }
 
-    /* ****************** */
-    /* Playlist Listeners */
-    /* ****************** */
+    /* ************************ */
+    /* Playlist Panel Listeners */
+    /* ************************ */
 
     /**
      * Mouse listener to handle left and right clicks within
@@ -515,10 +534,15 @@ public class Window extends JFrame {
         public void mouseReleased(MouseEvent e) {
             JTree tree = (JTree) e.getSource();
             String selection = tree.getSelectionPath().getLastPathComponent().toString();
-            if(SwingUtilities.isRightMouseButton(e)
-                    && !selection.equals("Library")
+
+            if(SwingUtilities.isRightMouseButton(e) && !selection.equals("Library")
                     && !selection.equals("Playlists")) {
-                // An individual playlist was right clicked, show popup menu
+                // An individual playlist was right clicked,
+
+                // Set selected playlist
+                selectedPlaylist = selection;
+
+                // show popup menu
                 maybeShowPopup(e);
             }
         }
@@ -540,36 +564,14 @@ public class Window extends JFrame {
                     // Update the table model and fire change
                     musicTable.updateTableModel(selection);
 
-                    /*
-                     * This block of code is a hackey way of making the popup menu
-                     * not display in the playlist table.  The popup menu within the
-                     * playlist table is not a requirement, and the options in that menu
-                     * do not work properly from within the playlist table, so for now
-                     * whenever the user switches to a playlist table the popup menu is removed
-                     * and when they switch back to the library table the popup menu is added back
-                     */
-                    // Determine if popup listener is present
-                    boolean listenerFound = false;
-                    MouseListener[] mouseListeners = musicTable.getTable().getMouseListeners();
-                    for(MouseListener mouseListener : mouseListeners) {
-                        if(mouseListener.getClass().equals(musicTablePopupListener.getClass())) {
-                            listenerFound = true;
-                        }
-                    }
-                    // Reinstate the popup listener if it was removed previously
-                    if(!listenerFound){
-                        musicTable.getTable().addMouseListener(musicTablePopupListener);
-                    }
-
-                    // If Library is not the selected item, a playlist name was selected
-                    // Remove popup menu listener and set selected playlist
-                    if(!selection.equals("Library")) {
-                        // remove the popup menu listener for playlist table
-                        musicTable.getTable().removeMouseListener(musicTablePopupListener);
+                    // If library selected: ensure add song to playlist sub menu gets added back
+                    // Else if individual playlist selected: remove the add song to playlist sub menu, set selectedPlaylist
+                    if(selection.equals("Library")) {
+                        musicTablePopupMenu.add(addSongToPlaylistSubMenu);
+                    } else {
                         selectedPlaylist = selection;
+                        musicTablePopupMenu.remove(addSongToPlaylistSubMenu);
                     }
-
-                    /* end of hackey block of code */
 
                     // Repaint the music table scroll pane
                     musicTableScrollPane.repaint();
@@ -660,6 +662,23 @@ public class Window extends JFrame {
         }
     }
 
+    /**
+     *
+     */
+    class NewPlaylistWindowListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            // Switch back to Library table in MAIN app window
+            musicTable.updateTableModel("Library");
+
+            // Set highlighted node in playlist panel to "Library"
+            playlistPanelTree.setSelectionRow(0);
+
+            // Open new window for selected playlist
+            Window newWindow = new Window(selectedPlaylist);
+            newWindow.display();
+        }
+    }
+
     /* *********************** */
     /* Control Panel Listeners */
     /* *********************** */
@@ -676,8 +695,10 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            if(ShiTunes.player.getLoadedSongIndex() != 0) {
-                // if not at top of library, skip previous, otherwise do nothing
+            // Only skip to previous if the loaded song is not the first item in the table
+            // and the loaded song is not set to -1 flag (which indicates that the
+            // loaded song was opened via the File->Open menu)
+            if(ShiTunes.player.getLoadedSongIndex() > 0) {
                 if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
                     // if player is currently playing/resumed
                     // stop current song
@@ -759,7 +780,12 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-             if(ShiTunes.player.getLoadedSongIndex() < musicTable.getTable().getRowCount() - 1) {
+            int loadedSongIndex = ShiTunes.player.getLoadedSongIndex();
+            int lastItemInTable = musicTable.getTable().getRowCount() - 1;
+            // Only skip to next if the loaded song is not the last item in the table
+            // and the loaded song is not set to -1 flag (which indicates that the
+            // loaded song was opened via the File->Open menu)
+            if(loadedSongIndex < lastItemInTable && loadedSongIndex != -1) {
                 if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
                     // if player is currently playing/resumed
                     // stop current song
@@ -806,26 +832,16 @@ public class Window extends JFrame {
      */
     class OpenItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            JFileChooser chooser = new JFileChooser();
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
-            chooser.setFileFilter(filter);  //filters for mp3 files only
-            //file chooser menu
-            if (chooser.showDialog(windowFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = chooser.getSelectedFile();
-                Song selectedSong = new Song(selectedFile.getPath());
-                if(!musicTable.songExistsInTable(selectedSong.getFilePath())) {
-                    DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
-                    model.addRow(new Object[]{selectedSong.getArtist(), selectedSong.getTitle(), selectedSong.getAlbum(),
-                            selectedSong.getYear(), selectedSong.getGenre(), selectedSong.getFilePath()});
-                    int index = model.getRowCount() - 1;
-                    ShiTunes.player.setLoadedSong(index,
-                            musicTable.getTable().getValueAt(index, 5).toString());
-                    ShiTunes.player.play();
-                } else {
-                    // TODO: display something that tells the user the song isn't being opened
+                JFileChooser chooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
+                chooser.setFileFilter(filter);  //filters for mp3 files only
+                //file chooser menu
+                if (chooser.showDialog(windowFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = chooser.getSelectedFile();
+                    Song selectedSong = new Song(selectedFile.getPath());
+                    ShiTunes.player.quickPlay(selectedSong.getFilePath());
                 }
             }
-        }
     }
 
     /**
@@ -845,16 +861,16 @@ public class Window extends JFrame {
             if (chooser.showDialog(windowFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
-                if(windowType == Window.MAIN && musicTable.type == MusicTable.LIBRARY) {
-                    // If this is the main application window & the music table == library
+                if(musicTable.type == MusicTable.LIBRARY) {
+                    // If the music table == library
                     // Only add song to library table if it is not already present in db
                     if (ShiTunes.db.insertSong(selectedSong)) {
                         // if song successfully added to database
                         // add song to music library table
                         musicTable.addSongToTable(selectedSong);
                     }
-                } else if(windowType == Window.MAIN && musicTable.type == MusicTable.PLAYLIST){
-                    // If this is the main application window & the music table == playlist
+                } else if(musicTable.type == MusicTable.PLAYLIST){
+                    // If the music table == playlist
                     // Try to add song to db (if already in db it won't be added)
                     ShiTunes.db.insertSong(selectedSong);
                     // Add song to the playlist
@@ -880,6 +896,8 @@ public class Window extends JFrame {
             int min = musicTable.getSelectedSongRange()[0];
             int max = musicTable.getSelectedSongRange()[1];
 
+            DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
+
             // cycle through all selected songs and delete
             // one at a time
             // Note: starts at the bottom of the selected rows (ie. max index)
@@ -892,11 +910,15 @@ public class Window extends JFrame {
                     ShiTunes.player.stop();
                 }
 
-                DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
+
                 model.removeRow(row);
 
-                // Delete song from database by using filepath as an identifier
-                ShiTunes.db.deleteSong(selectedSong);
+                if(musicTable.type == MusicTable.LIBRARY) {
+                    // Delete song from database by using filepath as an identifier
+                    ShiTunes.db.deleteSong(selectedSong);
+                } else if(musicTable.type == MusicTable.PLAYLIST){
+                    ShiTunes.db.deleteSongFromPlaylist(selectedSong, selectedPlaylist);
+                }
             }
         }
     }
@@ -910,8 +932,12 @@ public class Window extends JFrame {
      */
     class ExitItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            ShiTunes.db.close();
-            System.exit(0);
+            if(windowType == Window.MAIN) {
+                ShiTunes.db.close();
+                System.exit(0);
+            } else if(windowType == Window.PLAYLIST) {
+                windowFrame.dispatchEvent(new WindowEvent(windowFrame, WindowEvent.WINDOW_CLOSING));
+            }
         }
     }
 }

@@ -94,6 +94,37 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
+     * Plays the song indicated by filePath
+     * For quick play of a song via the File->Open
+     * menu item
+     *
+     * @return true if song plays successfully
+     */
+    public boolean quickPlay(String filePath) {
+        try {
+            controller.open(new File(filePath));
+            if (state == 2 || state == 5 || state == 4) {
+                // player.state == playing/resumed/paused
+                // stop player
+                controller.stop();
+            }
+            // play loaded song
+            controller.play();
+
+            // Set loaded song index to -1 (as a flag)
+            // since this is a quick play operation
+            // activated via the File->Open menu option
+            loadedSongIndex = -1;
+            loadedSong = "";
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
      * Resumes a previously paused song
      *
      * @return true if song is resumed successfully
@@ -167,8 +198,8 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public void setLoadedSong(int index, String loadedSong) {
         if(index >= 0) {
-            this.loadedSong = loadedSong;
             this.loadedSongIndex = index;
+            this.loadedSong = loadedSong;
         }
     }
 
