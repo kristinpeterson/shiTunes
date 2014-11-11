@@ -98,13 +98,19 @@ public class Window extends JFrame {
 
         // Create the main panel that resides within the windowFrame
         // Layout: BoxLayout, X_AXIS
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
+        JSplitPane mainPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainPanel.setDividerLocation(150);
+
+        // Instantiate scroll pane for table
+        musicTableScrollPane = new JScrollPane(musicTable.getTable());
 
         // Create the controlTablePanel that will reside within the mainPanel
         // Layout: BoxLayout, Y_AXIS
         JPanel controlTablePanel = new JPanel();
         controlTablePanel.setLayout(new BoxLayout(controlTablePanel, BoxLayout.Y_AXIS));
+        controlTablePanel.add(getControlPanel());
+        controlTablePanel.add(musicTableScrollPane);
+        controlTablePanel.setMinimumSize(new Dimension(500, 600));
 
         // Create menuBar and add File menu
         JMenuBar menuBar = new JMenuBar();
@@ -116,12 +122,7 @@ public class Window extends JFrame {
         //creates the right click menu for the playlists
         createPlaylistPopupMenu();
 
-        // Instantiate scroll pane for table
-        musicTableScrollPane = new JScrollPane(musicTable.getTable());
-
         // Build main panel
-        controlTablePanel.add(getControlPanel());
-        controlTablePanel.add(musicTableScrollPane);
         if(windowType == Window.MAIN) {
             mainPanel.add(getPlaylistPanel());
         }
@@ -130,6 +131,7 @@ public class Window extends JFrame {
         // Add all GUI components to shiTunes application frame
         windowFrame.setJMenuBar(menuBar);
         windowFrame.setContentPane(mainPanel);
+        /***///windowFrame.setIconImage();
         windowFrame.pack();
         windowFrame.setLocationByPlatform(true);
     }
@@ -208,7 +210,12 @@ public class Window extends JFrame {
             e.printStackTrace();
         }
 
-        return new JScrollPane(playlistPanelTree);
+        // Instantiate playlist panel pane to be returned
+        // and set minimum dimensions
+        JScrollPane playlistPanelPane = new JScrollPane(playlistPanelTree);
+        playlistPanelPane.setMinimumSize(new Dimension(150, 600));
+
+        return playlistPanelPane;
     }
 
     /**
@@ -500,7 +507,7 @@ public class Window extends JFrame {
     /**
      * Mouse listener to handle left and right clicks within
      * the Playlist Panel
-     * 
+     *
      */
     class PlaylistPanelMouseListener extends MouseAdapter {
 
