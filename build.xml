@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="shiTunes" default="default" basedir=".">
+    <import file="build.xml"/>
+
+    <taskdef name="bundleapp"
+             classname="com.oracle.appbundler.AppBundlerTask"
+             classpath="lib/appbundler-1.0.jar" />
+
+    <target name="bundle-shiTunes">
+        <bundleapp outputdirectory="dist"
+                   name="shiTunes"
+                   displayname="shiTunes"
+                   identifier="ShiTunes"
+                   mainclassname="ShiTunes">
+            <classpath file="out/artifacts/shiTunes_jar/shiTunes.jar" />
+        </bundleapp>
+    </target>
+
+</project>

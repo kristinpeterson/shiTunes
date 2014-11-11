@@ -562,7 +562,7 @@ public class ShiBase {
             // Get all playlist songs
             String query = "SELECT * FROM " + SONG_TABLE +
                     " JOIN " + PLAYLIST_SONG_TABLE +
-                    " USING (songId)";
+                    " USING (songId) WHERE playlistID = " + playlistId;
             stmt = conn.prepareStatement(query);
             ResultSet playlistSongsRS = stmt.executeQuery();
 
