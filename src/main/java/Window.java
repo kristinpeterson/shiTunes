@@ -183,56 +183,13 @@ public class Window extends JFrame {
         root.add(playlistNode);
 
         // Create playlist panel tree
-         playlistPanelTree = new JTree(root);
-        //adds a listener to the tree in order to allow for right click menu
-        playlistPanelTree.addMouseListener(new PlaylistPopupListener());
+        playlistPanelTree = new JTree(root);
+
+        // Add mouse listener: manages left and right click
+        playlistPanelTree.addMouseListener(new PlaylistPanelMouseListener());
+
         // Make the root node invisible
         playlistPanelTree.setRootVisible(false);
-
-        playlistPanelTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
-            @Override
-            public void valueChanged(TreeSelectionEvent e) {
-                String selection = e.getPath().getLastPathComponent().toString();
-                // If selection is not Playlist
-                // ie. "Library" or a playlist name was selected
-                if(!selection.equals("Playlists")) {
-                    // Update the table model and fire change
-                    musicTable.updateTableModel(selection);
-
-                    /*
-                     * This block of code is a hackey way of making the popup menu
-                     * not display in the playlist table.  The popup menu within the
-                     * playlist table is not a requirement, and the options in that menu
-                     * do not work properly from within the playlist table, so for now
-                     * whenever the user switches to a playlist table the popup menu is removed
-                     * and when they switch back to the library table the popup menu is added back
-                     */
-                    // Determine if popup listener is present
-                    boolean listenerFound = false;
-                    MouseListener[] mouseListeners = musicTable.getTable().getMouseListeners();
-                    for(MouseListener mouseListener : mouseListeners) {
-                        if(mouseListener.getClass().equals(musicTablePopupListener.getClass())) {
-                            listenerFound = true;
-                        }
-                    }
-                    // Reinstate the popup listener if it was removed previously
-                    if(!listenerFound){
-                        musicTable.getTable().addMouseListener(musicTablePopupListener);
-                    }
-
-                    // If Library is not the selected item, a playlist name was selected
-                    // Remove popup menu listener and set selected playlist
-                    if(!selection.equals("Library")) {
-                        // remove the popup menu listener for playlist table
-                        musicTable.getTable().removeMouseListener(musicTablePopupListener);
-                        selectedPlaylist = selection;
-                    }
-
-                    // Repaint the music table scroll pane
-                    musicTableScrollPane.repaint();
-                }
-            }
-        });
 
         // Set Icons
         try {
@@ -266,6 +223,7 @@ public class Window extends JFrame {
 
         for(String playlistName : playlistNames) {
             DefaultMutableTreeNode playlist = new DefaultMutableTreeNode(playlistName);
+
             playlistNode.add(playlist);
         }
     }
@@ -487,26 +445,6 @@ public class Window extends JFrame {
             }
         }
     }
-    class PlaylistPopupListener extends MouseAdapter {
-        @Override
-        public void mousePressed(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        public void maybeShowPopup(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                JTree tree = (JTree)e.getSource();
-                int row = tree.getClosestRowForLocation(e.getX(), e.getY());
-                tree.setSelectionRow(row);
-                playlistPopupMenu.show(e.getComponent(), e.getX(), e.getY());
-            }
-        }
-    }
 
     /**
      * Drop target listener on music table panel
@@ -560,6 +498,84 @@ public class Window extends JFrame {
     /* ****************** */
 
     /**
+     * Mouse listener to handle left and right clicks within
+     * the Playlist Panel
+     * 
+     */
+    class PlaylistPanelMouseListener extends MouseAdapter {
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            JTree tree = (JTree) e.getSource();
+            String selection = tree.getSelectionPath().getLastPathComponent().toString();
+            if(SwingUtilities.isRightMouseButton(e)
+                    && !selection.equals("Library")
+                    && !selection.equals("Playlists")) {
+                // An individual playlist was right clicked, show popup menu
+                maybeShowPopup(e);
+            }
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            JTree tree = (JTree) e.getSource();
+            String selection = tree.getSelectionPath().getLastPathComponent().toString();
+
+            // highlight selected row
+            int row = tree.getClosestRowForLocation(e.getX(), e.getY());
+            tree.setSelectionRow(row);
+            if(SwingUtilities.isLeftMouseButton(e)) {
+                // left click pressed
+
+                // If selection is not Playlist
+                // ie. "Library" or a playlist name was selected
+                if(!selection.equals("Playlists")) {
+                    // Update the table model and fire change
+                    musicTable.updateTableModel(selection);
+
+                    /*
+                     * This block of code is a hackey way of making the popup menu
+                     * not display in the playlist table.  The popup menu within the
+                     * playlist table is not a requirement, and the options in that menu
+                     * do not work properly from within the playlist table, so for now
+                     * whenever the user switches to a playlist table the popup menu is removed
+                     * and when they switch back to the library table the popup menu is added back
+                     */
+                    // Determine if popup listener is present
+                    boolean listenerFound = false;
+                    MouseListener[] mouseListeners = musicTable.getTable().getMouseListeners();
+                    for(MouseListener mouseListener : mouseListeners) {
+                        if(mouseListener.getClass().equals(musicTablePopupListener.getClass())) {
+                            listenerFound = true;
+                        }
+                    }
+                    // Reinstate the popup listener if it was removed previously
+                    if(!listenerFound){
+                        musicTable.getTable().addMouseListener(musicTablePopupListener);
+                    }
+
+                    // If Library is not the selected item, a playlist name was selected
+                    // Remove popup menu listener and set selected playlist
+                    if(!selection.equals("Library")) {
+                        // remove the popup menu listener for playlist table
+                        musicTable.getTable().removeMouseListener(musicTablePopupListener);
+                        selectedPlaylist = selection;
+                    }
+
+                    /* end of hackey block of code */
+
+                    // Repaint the music table scroll pane
+                    musicTableScrollPane.repaint();
+                }
+            }
+        }
+
+        public void maybeShowPopup(MouseEvent e) {
+            playlistPopupMenu.show(e.getComponent(), e.getX(), e.getY());
+        }
+    }
+
+    /**
      * Listener that creates a new Playlist
      * <p>
      * When 'Create Playlist' is selected from main menu,
@@ -601,8 +617,10 @@ public class Window extends JFrame {
 
                 // Refresh playlist panel tree
                 updatePlaylistNode();
+
                 // may need to add tree redraw or something
-                ((DefaultTreeModel)playlistPanelTree.getModel()).reload();
+                ((DefaultTreeModel)playlistPanelTree.getModel()).reload(playlistNode);
+
                 // Refresh GUI popupmenu playlist sub menu
                 updateAddPlaylistSubMenu();
 
