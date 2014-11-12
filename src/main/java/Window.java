@@ -408,6 +408,11 @@ public class Window extends JFrame {
             addSongToPlaylistSubMenu.add(item);
         }
 
+        // Add terminating "Create Playlist" item to "Add Song to Playlist Menu"
+        JMenuItem item = new JMenuItem("*Create Playlist*");
+        item.addActionListener(new CreatePlaylistListener());
+        addSongToPlaylistSubMenu.add(item);
+
         // Repaint the popup menu
         musicTablePopupMenu.repaint();
 
