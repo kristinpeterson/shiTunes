@@ -204,6 +204,9 @@ public class Window extends JFrame {
         // Make the root node invisible
         playlistPanelTree.setRootVisible(false);
 
+        // Expand playlist node (index 1)
+        playlistPanelTree.expandRow(1);
+
         // Set Icons
         try {
             BufferedImage musicResource = ImageIO.read(getClass().getResourceAsStream("/images/music.png"));
@@ -600,10 +603,12 @@ public class Window extends JFrame {
                     "Create New Playlist", JOptionPane.PLAIN_MESSAGE);
             ShiTunes.db.addPlaylist(playlistName);
 
-            //refresh GUI popupmenu playlist sub menu
+            // Refresh GUI popupmenu playlist sub menu
             updateAddPlaylistSubMenu();
             updatePlaylistNode();
             ((DefaultTreeModel)playlistPanelTree.getModel()).reload();
+            // Expand playlist node (index 1)
+            playlistPanelTree.expandRow(1);
         }
     }
 
@@ -659,6 +664,8 @@ public class Window extends JFrame {
                 String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
                 ShiTunes.db.addSongToPlaylist(selectedSong, playlist);
             }
+            // Expand playlist node (index 1)
+            playlistPanelTree.expandRow(1);
         }
     }
 

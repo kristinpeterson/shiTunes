@@ -31,6 +31,7 @@
     <orderEntry type="library" exported="" name="Gradle: vorbisspi1.0.2" level="project" />
     <orderEntry type="library" exported="" name="Gradle: derby" level="project" />
     <orderEntry type="library" exported="" name="Gradle: derbytools" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: appbundler-1.0" level="project" />
   </component>
 </module>
 

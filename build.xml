@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="shiTunes" default="default" basedir=".">
+<project name="shiTunes" default="bundle-shiTunes" basedir=".">
     <import file="build.xml"/>
 
     <taskdef name="bundleapp"
              classname="com.oracle.appbundler.AppBundlerTask"
-             classpath="lib/appbundler-1.0.jar" />
+             classpath="lib/appbundler-1.0.jar"/>
 
     <target name="bundle-shiTunes">
         <bundleapp outputdirectory="dist"
                    name="shiTunes"
                    displayname="shiTunes"
                    identifier="ShiTunes"
-                   mainclassname="ShiTunes">
+                   mainclassname="ShiTunes"
+                   icon="src/main/resources/images/icon.icns" >
             <classpath file="out/artifacts/shiTunes_jar/shiTunes.jar" />
         </bundleapp>
     </target>
