@@ -1,6 +1,12 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="shiTunes:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/shiTunes_jar</output-path>
+    <properties id="ant-postprocessing">
+      <options enabled="true">
+        <file>file://$PROJECT_DIR$/build.xml</file>
+        <target>bundle-shiTunes</target>
+      </options>
+    </properties>
     <root id="archive" name="shiTunes.jar">
       <element id="module-output" name="shiTunes" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/jogg-0.0.7.jar" path-in-jar="/" />
@@ -12,9 +18,9 @@
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/mp3spi1.9.5.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/tritonus_share.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/mp3agic.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/lib/basicplayer3.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/vorbisspi1.0.2.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/jl1.0.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/basicplayer3.0.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 /**
  * This is the main entry point of the shiTunes application
  * handling initialization and display of the GUI
@@ -5,15 +7,25 @@
  * @author shiTunes inc.
  */
 public class ShiTunes {
-    static MusicPlayer player;
     static ShiBase db;
+    static Window mainWindow;
+    static ArrayList<Window> windows;
 
     static {
-        player = new MusicPlayer();
         db = new ShiBase();
     }
 
     public static void main(String[] args) {
-        new Window().display();
+        // An array list of shiTunes application windows
+        windows = new ArrayList<>();
+
+        // The main shiTunes application window
+        mainWindow = new Window();
+
+        // Display main window
+        mainWindow.display();
+
+        // Add main application window to list of ShiTunes windows
+        windows.add(mainWindow);
     }
 }

@@ -1,7 +1,8 @@
-import javazoom.jlgui.basicplayer.*;
+import javazoom.jlgui.basicplayer.BasicController;
+import javazoom.jlgui.basicplayer.BasicPlayer;
+import javazoom.jlgui.basicplayer.BasicPlayerException;
 
 import java.io.File;
-import java.util.Map;
 
 /**
  * MusicPlayer class represents a persistent MusicPlayer object
@@ -9,30 +10,9 @@ import java.util.Map;
  *
  * @author shiTunes inc.
  */
-public class MusicPlayer implements BasicPlayerListener {
+public class MusicPlayer {
 
-    /*
-     * Indicates the player state
-     * <p>
-     * State Codes:
-     * <p>
-     * -1: UNKNOWN
-     * 0: OPENING
-     * 1: OPENED
-     * 2: PLAYING
-     * 3: STOPPED
-     * 4: PAUSED
-     * 5: RESUMED
-     * 6: SEEKING
-     * 7: SEEKED
-     * 8: EOM
-     * 9: PAN
-     * 10: GAIN
-     *
-     */
-    private int state;
-    private String loadedSong;
-    private int loadedSongIndex;
+    private int loadedSongId;
     private BasicPlayer player;
     private BasicController controller;
 
@@ -43,7 +23,6 @@ public class MusicPlayer implements BasicPlayerListener {
     public MusicPlayer() {
         player = new BasicPlayer();
         controller = (BasicController) player;
-        player.addBasicPlayerListener(this);
     }
 
     /**
@@ -53,6 +32,10 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public int getVolume() {
         return (int)(player.getGainValue() * 100);
+    }
+
+    public BasicPlayer getPlayer() {
+        return player;
     }
 
     /**
@@ -78,12 +61,7 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public boolean play() {
         try {
-            controller.open(new File(getLoadedSong()));
-            if (state == 2 || state == 5 || state == 4) {
-                // player.state == playing/resumed/paused
-                // stop player
-                controller.stop();
-            }
+            controller.open(new File(ShiTunes.db.getSongFilePath(getLoadedSongId())));
             // play loaded song
             controller.play();
             return true;
@@ -103,19 +81,20 @@ public class MusicPlayer implements BasicPlayerListener {
     public boolean quickPlay(String filePath) {
         try {
             controller.open(new File(filePath));
-            if (state == 2 || state == 5 || state == 4) {
-                // player.state == playing/resumed/paused
-                // stop player
-                controller.stop();
-            }
             // play loaded song
             controller.play();
 
-            // Set loaded song index to -1 (as a flag)
-            // since this is a quick play operation
-            // activated via the File->Open menu option
-            loadedSongIndex = -1;
-            loadedSong = "";
+            /*
+            * Set loaded song index to -1
+            * to indicate that no song is loaded.
+            *
+            * Since this is a quick play operation
+            * activated via the File->Open menu option
+            * when this song finishes, the next loaded
+            * song will be 0 (the first in the current table)
+            *
+            */
+            loadedSongId = 0;
 
             return true;
         } catch (Exception e) {
@@ -146,10 +125,7 @@ public class MusicPlayer implements BasicPlayerListener {
      */
     public boolean pause() {
         try {
-            if(state == 2 || state == 5) {
-                // player.state == playing/resumed
-                controller.pause();
-            }
+            controller.pause();
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -173,109 +149,21 @@ public class MusicPlayer implements BasicPlayerListener {
     }
 
     /**
-     * Gets the currently loaded song filename
+     * Gets the currently loaded song id
      *
-     * @return the currently loaded song's filename
+     * @return the currently loaded song's id
      */
-    public String getLoadedSong() {
-        return loadedSong;
+    public int getLoadedSongId() {
+        return loadedSongId;
     }
 
     /**
-     * Gets the currently loaded songs index
+     * Sets the currently loaded song using it's song id
      *
-     * @return the currently loaded song index
+     * @param id the song id of the song being loaded
      */
-    public int getLoadedSongIndex() {
-        return loadedSongIndex;
+    public void setLoadedSongId(int id) {
+        this.loadedSongId = id;
     }
 
-    /**
-     * Sets the currently loaded song using it's MusicLibrary index
-     *
-     * @param index the index of the song being loaded
-     * @param loadedSong the filepath of the song that is being loaded
-     */
-    public void setLoadedSong(int index, String loadedSong) {
-        if(index >= 0) {
-            this.loadedSongIndex = index;
-            this.loadedSong = loadedSong;
-        }
-    }
-
-    /**
-     * Open callback, stream is ready to play.
-     *
-     * properties map includes audio format dependant features such as
-     * bitrate, duration, frequency, channels, number of frames, vbr flag, ...
-     *
-     * @param stream could be File, URL or InputStream
-     * @param properties audio stream properties.
-     */
-    public void opened(Object stream, Map properties)
-    {
-        // Pay attention to properties. It's useful to get duration,
-        // bitrate, channels, even tag such as ID3v2.
-        // System.out.println("opened : "+properties.toString());
-    }
-
-    /**
-     * Progress callback while playing.
-     *
-     * This method is called severals time per seconds while playing.
-     * properties map includes audio format features such as
-     * instant bitrate, microseconds position, current frame number, ...
-     *
-     * @param bytesread from encoded stream.
-     * @param microseconds elapsed (<b>reseted after a seek !</b>).
-     * @param pcmdata PCM samples.
-     * @param properties audio stream parameters.
-     */
-    public void progress(int bytesread, long microseconds, byte[] pcmdata, Map properties)
-    {
-        // Pay attention to properties. It depends on underlying JavaSound SPI
-        // MP3SPI provides mp3.equalizer.
-        // System.out.println("progress : "+properties.toString());
-    }
-
-    /**
-     * Notification callback for basicplayer events such as opened
-     * <p>
-     * States Codes - see state variable comment
-     *
-     * @param event the basicplayer event (OPENED, PAUSED, PLAYING, SEEKING...)
-     */
-    public void stateUpdated(BasicPlayerEvent event)
-    {
-        // Notification of BasicPlayer states (opened, playing, end of media, ...)
-        if(event.getCode() != 10) {
-            // if state is not GAIN (due to volume change)
-            // update state code
-            state = event.getCode();
-        } else {
-            // do nothing, retain previous state
-        }
-    }
-
-    /**
-     * Public accessor for player state
-     * <p>
-     * States Codes - see state variable comment
-     *
-     * @return the players state
-     */
-    public int getState() {
-        return state;
-    }
-
-    /**
-     * A handle to the BasicPlayer, plugins may control the player through
-     * the controller (play, stop, ...)
-     *
-     * @param controller a handle to the player
-     */
-    public void setController(BasicController controller)
-    {
-        // System.out.println("setController : " + controller);
-    }
 }

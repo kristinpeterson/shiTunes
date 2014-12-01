@@ -1,11 +1,18 @@
+import javazoom.jlgui.basicplayer.BasicController;
+import javazoom.jlgui.basicplayer.BasicPlayerEvent;
+import javazoom.jlgui.basicplayer.BasicPlayerListener;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -17,17 +24,42 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * The GUI class builds the shiTunes Graphical User Interface
  *
  * @author shiTunes inc.
  */
-public class Window extends JFrame {
+public class Window
+       extends JFrame
+       implements BasicPlayerListener {
 
     // Window type
     public static int MAIN = 0;
     public static int PLAYLIST = 1;
+
+    /*
+     * Indicates the player state
+     * <p>
+     * State Codes:
+     * <p>
+     * -1: UNKNOWN
+     * 0: OPENING
+     * 1: OPENED
+     * 2: PLAYING
+     * 3: STOPPED
+     * 4: PAUSED
+     * 5: RESUMED
+     * 6: SEEKING
+     * 7: SEEKED
+     * 8: EOM
+     * 9: PAN
+     * 10: GAIN
+     *
+     */
+    private int playerState;
+    private int loadedSongBytes;
 
     private int windowType;
     private JFrame windowFrame;
@@ -43,6 +75,8 @@ public class Window extends JFrame {
     private JTree playlistPanelTree;
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
+    
+    private MusicPlayer player;
 
     /**
      * The Window default constructor
@@ -56,6 +90,10 @@ public class Window extends JFrame {
 
         // Set this Window instance's table
         this.musicTable = new MusicTable();
+
+        // Set this Window instance's player
+        player = new MusicPlayer();
+        player.getPlayer().addBasicPlayerListener(this);
 
         buildWindowLayout("shiTunes");
     }
@@ -77,6 +115,13 @@ public class Window extends JFrame {
 
         // Set this Window instance's table
         this.musicTable = new MusicTable(playlistName);
+
+        // Set this Window instance's player
+        player = new MusicPlayer();
+        player.getPlayer().addBasicPlayerListener(this);
+
+        // Add this window to list of application windows
+        ShiTunes.windows.add(this);
 
         buildWindowLayout(playlistName);
     }
@@ -103,8 +148,11 @@ public class Window extends JFrame {
 
         if(windowType == Window.MAIN) {
             windowFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        } else if(windowType == Window.PLAYLIST) {
-            windowFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        } else {
+            if (windowType == Window.PLAYLIST) {
+                windowFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                windowFrame.addWindowListener(new PlaylistWindowListener());
+            }
         }
 
         // Create the main panel that resides within the windowFrame
@@ -379,7 +427,7 @@ public class Window extends JFrame {
         JMenuItem deletePlaylist = new JMenuItem("Delete Playlist");
         JMenuItem newWindow = new JMenuItem("Open Playlist in New Window");
         deletePlaylist.addActionListener(new DeletePlaylistListener());
-        newWindow.addActionListener(new NewPlaylistWindowListener());
+        newWindow.addActionListener(new NewWindowListener());
         playlistPopupMenu.add(deletePlaylist);
         playlistPopupMenu.add(newWindow);
     }
@@ -429,12 +477,10 @@ public class Window extends JFrame {
     class TableItemSelectionListener implements ListSelectionListener {
         @Override
         public void valueChanged(ListSelectionEvent event) {
-            // set the currently selected row as the selected song
-            musicTable.setSelectedSong(musicTable.getTable().getSelectedRow());
             // set the selection range (min == max if only one selected)
             int min = ((DefaultListSelectionModel)event.getSource()).getMinSelectionIndex();
             int max = ((DefaultListSelectionModel)event.getSource()).getMaxSelectionIndex();
-            musicTable.setSelectedSongRange(min, max);
+            musicTable.setSelectedSongs(min, max);
         }
     }
 
@@ -445,11 +491,11 @@ public class Window extends JFrame {
     class DoubleClickListener extends MouseAdapter {
         public void mousePressed(MouseEvent me) {
             if (me.getClickCount() == 2) {
-                // set selected song as currently loaded song for the player
+                // set loaded song and play
                 int index = musicTable.getTable().getSelectedRow();
-                ShiTunes.player.setLoadedSong(index,
-                        musicTable.getTable().getValueAt(index, 5).toString());
-                ShiTunes.player.play();
+                int songId = Integer.parseInt(musicTable.getTable().getValueAt(index, 0).toString());
+                player.setLoadedSongId(songId);
+                player.play();
             }
         }
     }
@@ -504,21 +550,35 @@ public class Window extends JFrame {
                     if(musicTable.type == MusicTable.LIBRARY) {
                         // If this is the main application window & the music table == library
                         // Only add song to library table if it is not already present in db
-                        if (ShiTunes.db.insertSong(song)) {
+                        int id = ShiTunes.db.insertSong(song);
+                        if (id != -1) {
                             // if song successfully added to database
                             // add song to music library table
-                            musicTable.addSongToTable(song);
+                            musicTable.addSongToTable(id, song);
                         }
-                    } else if(musicTable.type == MusicTable.PLAYLIST){
-                        // If this is the main application window & the music table == playlist
+                    } else if(musicTable.type == MusicTable.PLAYLIST) {
+
+                        // If the music table == playlist
                         // Try to add song to db (if already in db it won't be added)
-                        ShiTunes.db.insertSong(song);
+                        int id = ShiTunes.db.insertSong(song);
 
                         // Add song to the playlist
                         ShiTunes.db.addSongToPlaylist(song.getFilePath(), selectedPlaylist);
 
+                        // Get song id if the song was already in library
+                        // (ie. id in previous assignment == -1)
+                        if(id == -1) {
+                            id = ShiTunes.db.getSongId(song.getFilePath());
+                        }
+
                         // Add song to playlist table
-                        musicTable.addSongToTable(song);
+                        musicTable.addSongToTable(id, song);
+
+                        // Notify main application window table of change
+                        // if this is a separate playlist window
+                        if(windowType == Window.PLAYLIST) {
+                            ShiTunes.mainWindow.musicTable.updateTableModel("Library");
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -531,17 +591,35 @@ public class Window extends JFrame {
     /* Playlist Panel Listeners */
     /* ************************ */
 
-    /**
-     * Mouse listener to handle left and right clicks within
-     * the Playlist Panel
-     *
-     */
+    class NewWindowListener implements  ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            // Switch back to Library table in MAIN app window
+            musicTable.updateTableModel("Library");
+
+            // Set highlighted node in playlist panel to "Library"
+            playlistPanelTree.setSelectionRow(0);
+
+            // Open new window for selected playlist
+            Window newWindow = new Window(selectedPlaylist);
+            newWindow.display();
+        }
+    }
+
+        /**
+         * Mouse listener to handle left and right clicks within
+         * the Playlist Panel
+         *
+         */
     class PlaylistPanelMouseListener extends MouseAdapter {
 
         @Override
         public void mouseReleased(MouseEvent e) {
             JTree tree = (JTree) e.getSource();
             String selection = tree.getSelectionPath().getLastPathComponent().toString();
+
+            if(selection.equals(null)) {
+                selection = "Library";  // set selection to "Library" if null, as default
+            }
 
             if(SwingUtilities.isRightMouseButton(e) && !selection.equals("Library")
                     && !selection.equals("Playlists")) {
@@ -560,16 +638,21 @@ public class Window extends JFrame {
             JTree tree = (JTree) e.getSource();
             String selection = tree.getSelectionPath().getLastPathComponent().toString();
 
+            if(selection.equals(null)) {
+                selection = "Library";  // set selection to "Library" if null, as default
+            }
+
             // highlight selected row
             int row = tree.getClosestRowForLocation(e.getX(), e.getY());
             tree.setSelectionRow(row);
+
             if(SwingUtilities.isLeftMouseButton(e)) {
                 // left click pressed
 
                 // If selection is not Playlist
                 // ie. "Library" or a playlist name was selected
                 if(!selection.equals("Playlists")) {
-                    // Update the table model and fire change
+                    // Update the table model
                     musicTable.updateTableModel(selection);
 
                     // If library selected: ensure add song to playlist sub menu gets added back
@@ -612,8 +695,29 @@ public class Window extends JFrame {
             updateAddPlaylistSubMenu();
             updatePlaylistNode();
             ((DefaultTreeModel)playlistPanelTree.getModel()).reload();
+
             // Expand playlist node (index 1)
             playlistPanelTree.expandRow(1);
+
+            // Select playlist node just created
+            DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) playlistPanelTree.getModel().getRoot();
+            DefaultMutableTreeNode playlistsNode = (DefaultMutableTreeNode) playlistPanelTree.getModel().getChild(rootNode, 1);
+            TreePath path = new TreePath(rootNode);
+            path = path.pathByAddingChild(playlistsNode);
+            int numPlaylists = playlistPanelTree.getModel().getChildCount(playlistsNode);
+            for(int i = 0; i < numPlaylists; i++) {
+                String node = playlistPanelTree.getModel().getChild(playlistsNode, i).toString();
+                if(node.equals(playlistName)) {
+                    path = path.pathByAddingChild(playlistsNode.getChildAt(i));
+                    playlistPanelTree.addSelectionPath(path);
+                }
+            }
+
+            // Update selected playlist
+            selectedPlaylist = playlistName;
+
+            // Update table model
+            musicTable.updateTableModel(playlistName);
         }
     }
 
@@ -674,23 +778,6 @@ public class Window extends JFrame {
         }
     }
 
-    /**
-     *
-     */
-    class NewPlaylistWindowListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            // Switch back to Library table in MAIN app window
-            musicTable.updateTableModel("Library");
-
-            // Set highlighted node in playlist panel to "Library"
-            playlistPanelTree.setSelectionRow(0);
-
-            // Open new window for selected playlist
-            Window newWindow = new Window(selectedPlaylist);
-            newWindow.display();
-        }
-    }
-
     /* *********************** */
     /* Control Panel Listeners */
     /* *********************** */
@@ -707,22 +794,23 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
+            int previousSongIndex = musicTable.getSelectedSongRow() - 1;
+
             // Only skip to previous if the loaded song is not the first item in the table
             // and the loaded song is not set to -1 flag (which indicates that the
             // loaded song was opened via the File->Open menu)
-            if(ShiTunes.player.getLoadedSongIndex() > 0) {
-                if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
+            if(previousSongIndex >= 0) {
+                if(playerState == BasicPlayerEvent.PLAYING ||
+                   playerState == BasicPlayerEvent.RESUMED) {
                     // if player is currently playing/resumed
                     // stop current song
                     // decrement player.currentSongIndex
                     // play previous song
-                    ShiTunes.player.stop();
-                    if(ShiTunes.player.getLoadedSongIndex() > 0) {
-                        int index = ShiTunes.player.getLoadedSongIndex() - 1;
-                        ShiTunes.player.setLoadedSong(index,
-                                musicTable.getTable().getValueAt(index, 5).toString());
-                    }
-                    ShiTunes.player.play();
+                    player.stop();
+                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(previousSongIndex, 0).toString());
+                    player.setLoadedSongId(songId);
+                    musicTable.getTable().setRowSelectionInterval(previousSongIndex, previousSongIndex);
+                    player.play();
                 }
             }
         }
@@ -738,16 +826,36 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            boolean selectedSongIsCurrent = musicTable.getSelectedSong().equals(ShiTunes.player.getLoadedSong());
-            if (selectedSongIsCurrent && ShiTunes.player.getState() == 4) {
+            // boolean indicator, true if selected song is currently loaded to player
+            boolean selectedSongIsLoaded = musicTable.getTable().getSelectedRow()
+                                    == player.getLoadedSongId();
+            if (selectedSongIsLoaded && playerState == BasicPlayerEvent.PAUSED) {
                 // if selected song is current song on player
                 // and player.state == paused
-                ShiTunes.player.resume();
+                player.resume();
             } else {
+                // Get the index of the selected row
                 int index = musicTable.getTable().getSelectedRow();
-                ShiTunes.player.setLoadedSong(index,
-                        musicTable.getTable().getValueAt(index, 5).toString());
-                ShiTunes.player.play();
+                if(index == -1) {
+                    // if no row selected:
+                    // set loaded song to first song in table
+                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(0, 0).toString());
+                    musicTable.getTable().setRowSelectionInterval(0, 0);
+                    player.setLoadedSongId(songId);
+                } else {
+                    // selected song found:
+                    // set loaded song to selected song
+                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(index, 0).toString());
+                    musicTable.getTable().setRowSelectionInterval(index, index);
+                    player.setLoadedSongId(songId);
+                }
+                if (playerState == BasicPlayerEvent.PLAYING ||
+                    playerState == BasicPlayerEvent.RESUMED ||
+                    playerState == BasicPlayerEvent.PAUSED) {
+                    // stop player
+                    player.stop();
+                }
+                player.play();
             }
         }
     }
@@ -762,7 +870,10 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            ShiTunes.player.pause();
+            if(playerState == BasicPlayerEvent.PLAYING ||
+               playerState == BasicPlayerEvent.RESUMED) {
+                player.pause();
+            }
         }
     }
 
@@ -776,7 +887,7 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            ShiTunes.player.stop();
+            player.stop();
         }
     }
 
@@ -792,22 +903,24 @@ public class Window extends JFrame {
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            int loadedSongIndex = ShiTunes.player.getLoadedSongIndex();
+            int nextSongIndex = musicTable.getSelectedSongRow() + 1;
             int lastItemInTable = musicTable.getTable().getRowCount() - 1;
+
             // Only skip to next if the loaded song is not the last item in the table
             // and the loaded song is not set to -1 flag (which indicates that the
             // loaded song was opened via the File->Open menu)
-            if(loadedSongIndex < lastItemInTable && loadedSongIndex != -1) {
-                if(ShiTunes.player.getState() == 2 || ShiTunes.player.getState() == 5) {
+            if(nextSongIndex <= lastItemInTable) {
+                if(playerState == BasicPlayerEvent.PLAYING ||
+                   playerState == BasicPlayerEvent.RESUMED) {
                     // if player is currently playing/resumed
                     // stop current song
-                    // decriment player.currentSongIndex
+                    // skip loaded song to next song
                     // play next song
-                    ShiTunes.player.stop();
-                    int index = ShiTunes.player.getLoadedSongIndex() + 1;
-                    ShiTunes.player.setLoadedSong(index,
-                            musicTable.getTable().getValueAt(index, 5).toString());
-                    ShiTunes.player.play();
+                    player.stop();
+                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(nextSongIndex, 0).toString());
+                    player.setLoadedSongId(songId);
+                    musicTable.getTable().setRowSelectionInterval(nextSongIndex, nextSongIndex);
+                    player.play();
                 }
             }
         }
@@ -823,7 +936,7 @@ public class Window extends JFrame {
                 // volume converted to double value in range [0.0, 1.0]
                 // which is the range required by BasicPlayer setGain() method
                 double volume = source.getValue() / 100.00;
-                ShiTunes.player.adjustVolume(volume);
+                player.adjustVolume(volume);
             }
         }
     }
@@ -851,7 +964,14 @@ public class Window extends JFrame {
                 if (chooser.showDialog(windowFrame, "Open Song") == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = chooser.getSelectedFile();
                     Song selectedSong = new Song(selectedFile.getPath());
-                    ShiTunes.player.quickPlay(selectedSong.getFilePath());
+                    if (playerState == BasicPlayerEvent.PLAYING ||
+                        playerState == BasicPlayerEvent.RESUMED ||
+                        playerState == BasicPlayerEvent.PAUSED) {
+                        // player.state == playing/resumed/paused
+                        // stop player
+                        player.stop();
+                    }
+                    player.quickPlay(selectedSong.getFilePath());
                 }
             }
     }
@@ -873,23 +993,25 @@ public class Window extends JFrame {
             if (chooser.showDialog(windowFrame, "Add Song") == JFileChooser.APPROVE_OPTION) {
                 File selectedFile = chooser.getSelectedFile();
                 Song selectedSong = new Song(selectedFile.getPath());
+                int id = ShiTunes.db.insertSong(selectedSong);  // -1 if failure
+
                 if(musicTable.type == MusicTable.LIBRARY) {
                     // If the music table == library
                     // Only add song to library table if it is not already present in db
-                    if (ShiTunes.db.insertSong(selectedSong)) {
+                    if (id != -1) {
                         // if song successfully added to database
                         // add song to music library table
-                        musicTable.addSongToTable(selectedSong);
+                        musicTable.addSongToTable(id, selectedSong);
                     }
                 } else if(musicTable.type == MusicTable.PLAYLIST){
                     // If the music table == playlist
-                    // Try to add song to db (if already in db it won't be added)
-                    ShiTunes.db.insertSong(selectedSong);
                     // Add song to the playlist
                     ShiTunes.db.addSongToPlaylist(selectedSong.getFilePath(), selectedPlaylist);
                     // Add song to playlist table
-                    musicTable.addSongToTable(selectedSong);
+                    musicTable.addSongToTable(id, selectedSong);
                 }
+
+                updateAllWindows();
             }
         }
     }
@@ -910,28 +1032,32 @@ public class Window extends JFrame {
 
             DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
 
-            // cycle through all selected songs and delete
-            // one at a time
-            // Note: starts at the bottom of the selected rows (ie. max index)
-            // and works it's way up the list of selected rows
+            /*
+            * Cycle through all selected songs and delete
+            * one at a time
+            *
+            * Note: starts at the bottom of the selected rows (ie. max index)
+            * and works it's way up the list of selected rows
+            *
+            */
             for(int row = max; row >= min; row--) {
-                String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
+                int selectedSongId = Integer.parseInt(musicTable.getTable().getValueAt(row, 0).toString());
 
                 // Stop player if song being deleted is the current song on the player
-                if(selectedSong.equals(ShiTunes.player.getLoadedSong())) {
-                    ShiTunes.player.stop();
+                if(selectedSongId == player.getLoadedSongId()) {
+                    player.stop();
                 }
-
 
                 model.removeRow(row);
 
                 if(musicTable.type == MusicTable.LIBRARY) {
                     // Delete song from database by using filepath as an identifier
-                    ShiTunes.db.deleteSong(selectedSong);
+                    ShiTunes.db.deleteSong(selectedSongId);
                 } else if(musicTable.type == MusicTable.PLAYLIST){
-                    ShiTunes.db.deleteSongFromPlaylist(selectedSong, selectedPlaylist);
+                    ShiTunes.db.deleteSongFromPlaylist(selectedSongId, selectedPlaylist);
                 }
             }
+            updateAllWindows();
         }
     }
 
@@ -952,4 +1078,147 @@ public class Window extends JFrame {
             }
         }
     }
+
+    /* *********************** *
+     * Player Callback Methods *
+     * *********************** */
+
+    /**
+     * Open callback, stream is ready to play.
+     *
+     * properties map includes audio format dependant features such as
+     * bitrate, duration, frequency, channels, number of frames, vbr flag, ...
+     *
+     * @param stream could be File, URL or InputStream
+     * @param properties audio stream properties.
+     */
+    public void opened(Object stream, Map properties)
+    {
+        // Pay attention to properties. It's useful to get duration,
+        // bitrate, channels, even tag such as ID3v2.
+        // System.out.println("opened : "+properties.toString());
+        loadedSongBytes = Integer.parseInt(properties.get("audio.length.bytes").toString());
+    }
+
+    /**
+     * Progress callback while playing.
+     *
+     * This method is called several time per seconds while playing.
+     * properties map includes audio format features such as
+     * instant bitrate, microseconds position, current frame number, ...
+     *
+     * @param bytesread from encoded stream.
+     * @param microseconds elapsed (<b>reseted after a seek !</b>).
+     * @param pcmdata PCM samples.
+     * @param properties audio stream parameters.
+     */
+    public void progress(int bytesread, long microseconds, byte[] pcmdata, Map properties)
+    {
+        // Pay attention to properties. It depends on underlying JavaSound SPI
+        // MP3SPI provides mp3.equalizer.
+        // System.out.println("progress : "+properties.toString());
+
+        /*
+        * TODO: This is an attempt to skip to next song immediately after current song ends
+        *       but it isn't working properly, sound is funky for some reason, this is probably the wrong way to do this
+        */
+        if(bytesread == loadedSongBytes) {
+            NextListener nextListener = new NextListener();
+            nextListener.actionPerformed(null);
+        }
+    }
+
+    /**
+     * Notification callback for basicplayer events such as opened
+     * <p>
+     * States Codes - see state variable comment
+     *
+     * @param event the basicplayer event (OPENED, PAUSED, PLAYING, SEEKING...)
+     */
+    public void stateUpdated(BasicPlayerEvent event)
+    {
+        // Notification of BasicPlayer states (opened, playing, end of media, ...)
+        if(event.getCode() != BasicPlayerEvent.GAIN) {
+            // if state is not GAIN (due to volume change)
+            // update state code
+            playerState = event.getCode();
+        } else {
+            // do nothing, retain previous state
+        }
+    }
+
+    /**
+     * Public accessor for player state
+     * <p>
+     * States Codes - see state variable comment
+     *
+     * @return the players state
+     */
+    public int getState() {
+        return playerState;
+    }
+
+    /**
+     * A handle to the BasicPlayer, plugins may control the player through
+     * the controller (play, stop, ...)
+     *
+     * @param controller a handle to the player
+     */
+    public void setController(BasicController controller)
+    {
+        // System.out.println("setController : " + controller);
+    }
+
+    /* ********************* *
+    * Window related methods *
+    * ********************** */
+
+     /**
+     * Window listener for Window.type == PLAYLIST
+     *
+     */
+    class PlaylistWindowListener implements WindowListener {
+        @Override
+        public void windowActivated(WindowEvent e) { }
+
+        @Override
+        public void windowClosed(WindowEvent e) {
+            // Remove window from list of application windows
+            ShiTunes.windows.remove(this);
+        }
+
+        @Override
+        public void windowClosing(WindowEvent e) {
+        }
+
+        @Override
+        public void windowDeactivated(WindowEvent e) {
+        }
+
+        @Override
+        public void windowDeiconified(WindowEvent e ) { }
+
+        @Override
+        public void windowOpened(WindowEvent e) { }
+
+        @Override
+        public void windowIconified(WindowEvent e) { }
+    }
+
+    /*
+    * Updates the table model for all open windows
+    *
+    */
+    private void updateAllWindows() {
+        for(Window w : ShiTunes.windows) {
+            if(w.windowType == Window.MAIN) {
+                if(w.musicTable.type == MusicTable.LIBRARY) {
+                    w.musicTable.updateTableModel("Library");
+                }
+            } else {
+                w.musicTable.updateTableModel(w.selectedPlaylist);
+            }
+        }
+    }
+
 }

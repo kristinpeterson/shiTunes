@@ -54,7 +54,7 @@ public class ShiBaseTests {
 
     @Test
     public void testH_DeleteSong() {
-        assertEquals(true, db.deleteSong(song.getFilePath()));
+        assertEquals(true, db.deleteSong(db.getSongId(song.getFilePath())));
     }
 
     @Test

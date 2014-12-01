@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 
 /**
  * The MusicTable class contains methods related
@@ -15,8 +16,14 @@ public class MusicTable {
     public int type;
 
     private JTable table;
-    private String selectedSong;
     private int[] selectedSongRange;    // [min-index, max-index]
+    private int selectedSongRow;
+
+    /**
+     * The columns of the SONG table properly formatted for GUI
+     */
+    public static final String[] SONG_COLUMN_NAMES =  {"ID", "Artist", "Title", "Album", "Year",
+                                                        "Genre", "File Path", "Comment"};
 
     /**
      * Default constructor for MusicTable
@@ -25,17 +32,9 @@ public class MusicTable {
      *
      */
     public MusicTable(){
-        // Build library table
-        // Instantiate library table model - this prevents individual cells from being editable
-        DefaultTableModel tableModel = new DefaultTableModel(ShiTunes.db.getAllSongs(), ShiBase.SONG_COLUMN_NAMES) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                //all cells false
-                return false;
-            }
-        };
-        table = new JTable(tableModel);
-        type = MusicTable.LIBRARY;
+        table = new JTable();
+        buildTable(ShiTunes.db.getAllSongs());
+        type = MusicTable.LIBRARY;  // Set table type
     }
 
     /**
@@ -46,18 +45,36 @@ public class MusicTable {
      * @param playlistName the playlist to populate the JTable with
      */
     public MusicTable(String playlistName) {
-        // Build library table
-        // Instantiate library table model - this prevents individual cells from being editable
-        DefaultTableModel tableModel = new DefaultTableModel(
-                ShiTunes.db.getPlaylistSongs(playlistName), ShiBase.SONG_COLUMN_NAMES) {
+        table = new JTable();
+        buildTable(ShiTunes.db.getPlaylistSongs(playlistName));
+        type = MusicTable.PLAYLIST; // Set table type
+    }
+
+    // Build music table based on given set of songs
+    // Instantiate music table model
+    private void buildTable(Object[][] songs) {
+        DefaultTableModel tableModel = new DefaultTableModel(songs, SONG_COLUMN_NAMES) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                //all cells false
+                // all cells false -
+                // this prevents individual cells from being editable
                 return false;
             }
         };
-        table = new JTable(tableModel);
-        type = MusicTable.PLAYLIST;
+
+        table.setModel(tableModel);
+
+        // Hide id & file path columns
+        hide(0);  // id
+        hide(6);  // file path
+    }
+
+    private void hide(int index) {
+        TableColumn column = table.getColumnModel().getColumn(index);
+        column.setMinWidth(0);
+        column.setMaxWidth(0);
+        column.setWidth(0);
+        column.setPreferredWidth(0);
     }
 
     /**
@@ -67,26 +84,15 @@ public class MusicTable {
      * @param model
      */
     public void updateTableModel(String model) {
-        DefaultTableModel tableModel;
-        Object[][] songs;
         if (model.equals("Library")) {
             // update with library contents
-            songs = ShiTunes.db.getAllSongs();
+            buildTable(ShiTunes.db.getAllSongs());
             type = MusicTable.LIBRARY;
         } else {
             // update with playlist contents
-            songs = ShiTunes.db.getPlaylistSongs(model);
+            buildTable(ShiTunes.db.getPlaylistSongs(model));
             type = MusicTable.PLAYLIST;
         }
-        tableModel = new DefaultTableModel(songs, ShiBase.SONG_COLUMN_NAMES) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                //all cells false
-                return false;
-            }
-        };
-        tableModel.fireTableDataChanged();
-        table.setModel(tableModel);
     }
 
     /**
@@ -101,33 +107,14 @@ public class MusicTable {
     /**
      * Adds the given song to the library list and database
      *
+     * @param id the unique database id of the song
      * @param song the song to add to the library/database
      */
-    public void addSongToTable(Song song) {
+    public void addSongToTable(int id, Song song) {
         // Add row to JTable
         DefaultTableModel model = (DefaultTableModel) table.getModel();
-        model.addRow(new Object[]{song.getArtist(), song.getTitle(), song.getAlbum(),
+        model.addRow(new Object[]{String.valueOf(id), song.getArtist(), song.getTitle(), song.getAlbum(),
                 song.getYear(), song.getGenre(), song.getFilePath(), song.getComment()});
-    }
-
-    /**
-     * Gets the selected songs file path
-     *
-     * @return the selected song file path
-     */
-    public String getSelectedSong() {
-        return selectedSong;
-    }
-
-    /**
-     * Sets the selected songs file path and index
-     *
-     * @param index the selected song file path
-     */
-    public void setSelectedSong(int index) {
-        if(index >= 0) {
-            this.selectedSong = table.getValueAt(index, 5).toString();
-        }
     }
 
     /**
@@ -136,8 +123,9 @@ public class MusicTable {
      * @param min the minimum index of the selected range of songs
      * @param max the maximum index of the selected range of songs
      */
-    public void setSelectedSongRange(int min, int max) {
+    public void setSelectedSongs(int min, int max) {
         selectedSongRange = new int[] {min, max};
+        selectedSongRow = min;
     }
 
     /**
@@ -150,17 +138,12 @@ public class MusicTable {
     }
 
     /**
-     * Checks if a song is already listed in the library table
+     * Gets the selected songs row index
      *
-     * @param filePath the filepath of the song being searched for
-     * @return true if the song exists in the library table
+     * @return the selected song row index
      */
-    public boolean songExistsInTable(String filePath) {
-        for(int i = 0; i < table.getRowCount(); i++) {
-            if(filePath.equals(table.getValueAt(i, 5))) {
-                return true;
-            }
-        }
-        return false;
+    public int getSelectedSongRow() {
+        return selectedSongRow;
     }
+
 }

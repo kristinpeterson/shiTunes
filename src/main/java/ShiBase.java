@@ -19,10 +19,6 @@ public class ShiBase {
     public static final String SONG_TABLE = "SONG";
     public static final String PLAYLIST_TABLE = "PLAYLIST";
     public static final String PLAYLIST_SONG_TABLE = "PLAYLIST_SONG";
-    /**
-     * The columns of the SONG table properly formatted for GUI
-     */
-    public static final String[] SONG_COLUMN_NAMES =  {"Artist", "Title", "Album", "Year", "Genre", "File Path", "Comment"};
 
     // The database table column names
     // SONG Table
@@ -187,33 +183,39 @@ public class ShiBase {
      * Inserts the given song into the ShiBase database
      *
      * @param song the song to insert into the database
-     * @return true if the song was inserted successfully
-     *         false if the song already exists, or the insert failed
+     * @return the song id in db if the song was inserted successfully
+     *         -1 if the song already exists, or the insert failed
      */
-    public boolean insertSong(Song song) {
-        if(songExists(song.getFilePath())){
-            return false;
+    public int insertSong(Song song) {
+        // To store the song id, or return -1 if db insert fails
+        int id = -1;
+        ResultSet keys = null;
+
+        if(!songExists(song.getFilePath())) {
+            try {
+                String query = "INSERT INTO " + SONG_TABLE +
+                        " (filePath, artist, title, album, yearReleased, genre, comment)" +
+                        " VALUES (?, ?, ?, ?, ?, ?, ?)";
+                stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                stmt.setString(1, song.getFilePath());
+                stmt.setString(2, song.getArtist());
+                stmt.setString(3, song.getTitle());
+                stmt.setString(4, song.getAlbum());
+                stmt.setString(5, song.getYear());
+                stmt.setString(6, song.getGenre());
+                stmt.setString(7, song.getComment());
+                stmt.execute();
+                keys = stmt.getGeneratedKeys();
+                while (keys.next()) {
+                    id = keys.getInt(1);
+                }
+                keys.close();
+                stmt.close();
+            } catch (SQLException sqlExcept) {
+                sqlExcept.printStackTrace();
+            }
         }
-        try {
-            String query = "INSERT INTO " + SONG_TABLE +
-                    " (filePath, artist, title, album, yearReleased, genre, comment)" +
-                    " VALUES (?, ?, ?, ?, ?, ?, ?)";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, song.getFilePath());
-            stmt.setString(2, song.getArtist());
-            stmt.setString(3, song.getTitle());
-            stmt.setString(4, song.getAlbum());
-            stmt.setString(5, song.getYear());
-            stmt.setString(6, song.getGenre());
-            stmt.setString(7, song.getComment());
-            stmt.execute();
-            stmt.close();
-        }
-        catch (SQLException sqlExcept) {
-            sqlExcept.printStackTrace();
-            return false;
-        }
-        return true;
+        return id;
     }
 
     /**
@@ -249,21 +251,19 @@ public class ShiBase {
     /**
      * Deletes a given song from the database
      *
-     * @param filePath the filePath of the song to delete
+     * @param songId the unique song id of the song to delete
      * @return true if the song was successfully deleted, false if otherwise
      */
-    public boolean deleteSong(String filePath) {
-        if(songExists(filePath)) {
-            try {
-                String query = "DELETE FROM " + SONG_TABLE + " WHERE filePath=?";
-                stmt = conn.prepareStatement(query);
-                stmt.setString(1, filePath);
-                stmt.execute();
-                stmt.close();
-                return true;
-            } catch (SQLException sqlExcept) {
-                sqlExcept.printStackTrace();
-            }
+    public boolean deleteSong(int songId) {
+        try {
+            String query = "DELETE FROM " + SONG_TABLE + " WHERE songId=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, songId);
+            stmt.execute();
+            stmt.close();
+            return true;
+        } catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
         }
         return false;
     }
@@ -291,7 +291,7 @@ public class ShiBase {
             allSongs = new Object[rowCount][SONG_COLUMNS.length];
 
             // Get all records
-            String allSongsQuery = "SELECT * FROM " + SONG_TABLE + " ORDER BY artist";
+            String allSongsQuery = "SELECT * FROM " + SONG_TABLE + " ORDER BY title";
             stmt = conn.prepareStatement(allSongsQuery);
             ResultSet allSongsRS = stmt.executeQuery();
 
@@ -316,7 +316,7 @@ public class ShiBase {
      * @return the unique integer id of the song being searched for
      *         returns -1 if not found
      */
-    private int getSongId(String filePath) {
+    public int getSongId(String filePath) {
         int songId = -1;
         try {
             String query = "SELECT * FROM " + SONG_TABLE + " WHERE filePath=?";
@@ -334,16 +334,41 @@ public class ShiBase {
     }
 
     /**
+     * Get the unique file path of a song based on its
+     * song id (which is also unique)
+     *
+     * @param songId the song id of the song being searched for
+     * @return the unique file path of the song being searched for
+     *         returns  if not found
+     */
+    public String getSongFilePath(int songId) {
+        String songFilePath = null;
+        try {
+            String query = "SELECT * FROM " + SONG_TABLE + " WHERE songId=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, songId);
+            ResultSet songIdRS = stmt.executeQuery();
+            if(songIdRS.next()) {
+                songFilePath = songIdRS.getString("filePath");
+            }
+            stmt.close();
+        } catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return songFilePath;
+    }
+
+    /*
      * Returns the given SONG row as a String array
      *
      * @param rs the current result set item
      * @return the given result from the SONG table as a String array
      */
     private String[] getSongRow(ResultSet rs) {
-        String[] song = new String[SONG_COLUMN_NAMES.length];
+        String[] song = new String[MusicTable.SONG_COLUMN_NAMES.length];
         try {
-            for(int i = 0; i < SONG_COLUMN_NAMES.length; i++) {
-                song[i] = rs.getString(SONG_COLUMNS[i+1]);
+            for(int i = 0; i < MusicTable.SONG_COLUMN_NAMES.length; i++) {
+                song[i] = rs.getString(SONG_COLUMNS[i]);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -480,13 +505,12 @@ public class ShiBase {
     /**
      * Deletes the given song to given playlist
      *
-     * @param filePath the filePath of the song being deleted
+     * @param songId the unique song id of the song being deleted
      * @param playlist the playlist to delete the given song from
      * @return true if song successfully deleted to playlist
      */
-    public boolean deleteSongFromPlaylist(String filePath, String playlist) {
+    public boolean deleteSongFromPlaylist(int songId, String playlist) {
         try {
-            int songId = getSongId(filePath);
             int playlistId = getPlaylistId(playlist);
             if(songId!= -1 && playlistId != -1) {
                 // SUCCESS: song and playlist id's found
@@ -542,7 +566,7 @@ public class ShiBase {
     public Object[][] getPlaylistSongs(String playlistName) {
         Object[][] playlistSongs;
         int playlistId = getPlaylistId(playlistName);
-        int rowCount = 0;
+        int rowCount;
         int index = 0;
 
         try {
@@ -562,7 +586,8 @@ public class ShiBase {
             // Get all playlist songs
             String query = "SELECT * FROM " + SONG_TABLE +
                     " JOIN " + PLAYLIST_SONG_TABLE +
-                    " USING (songId) WHERE playlistID = " + playlistId;
+                    " USING (songId) WHERE playlistID = " + playlistId +
+                    " ORDER BY title";
             stmt = conn.prepareStatement(query);
             ResultSet playlistSongsRS = stmt.executeQuery();
 
@@ -579,7 +604,7 @@ public class ShiBase {
         return new Object[0][0];
     }
 
-    /**
+    /*
      * Get the unique integer id of a playlist based on its
      * name (which is also unique)
      *
