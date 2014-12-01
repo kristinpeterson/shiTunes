@@ -91,6 +91,9 @@ public class Window
         // Set this Window instance's table
         this.musicTable = new MusicTable();
 
+        // Set selected playlist to "Library" (the default table in Window.MAIN)
+        this.selectedPlaylist = "Library";
+
         // Set this Window instance's player
         player = new MusicPlayer();
         player.getPlayer().addBasicPlayerListener(this);
@@ -547,7 +550,7 @@ public class Window
                 for(Object file : fileList) {
                     Song song = new Song(file.toString());
 
-                    if(musicTable.type == MusicTable.LIBRARY) {
+                    if(musicTable.getType() == MusicTable.LIBRARY) {
                         // If this is the main application window & the music table == library
                         // Only add song to library table if it is not already present in db
                         int id = ShiTunes.db.insertSong(song);
@@ -556,7 +559,7 @@ public class Window
                             // add song to music library table
                             musicTable.addSongToTable(id, song);
                         }
-                    } else if(musicTable.type == MusicTable.PLAYLIST) {
+                    } else if(musicTable.getType() == MusicTable.PLAYLIST) {
 
                         // If the music table == playlist
                         // Try to add song to db (if already in db it won't be added)
@@ -995,7 +998,7 @@ public class Window
                 Song selectedSong = new Song(selectedFile.getPath());
                 int id = ShiTunes.db.insertSong(selectedSong);  // -1 if failure
 
-                if(musicTable.type == MusicTable.LIBRARY) {
+                if(musicTable.getType() == MusicTable.LIBRARY) {
                     // If the music table == library
                     // Only add song to library table if it is not already present in db
                     if (id != -1) {
@@ -1003,7 +1006,7 @@ public class Window
                         // add song to music library table
                         musicTable.addSongToTable(id, selectedSong);
                     }
-                } else if(musicTable.type == MusicTable.PLAYLIST){
+                } else if(musicTable.getType() == MusicTable.PLAYLIST){
                     // If the music table == playlist
                     // Add song to the playlist
                     ShiTunes.db.addSongToPlaylist(selectedSong.getFilePath(), selectedPlaylist);
@@ -1011,7 +1014,7 @@ public class Window
                     musicTable.addSongToTable(id, selectedSong);
                 }
 
-                updateAllWindows();
+                ShiTunes.updateAllWindows();
             }
         }
     }
@@ -1050,14 +1053,14 @@ public class Window
 
                 model.removeRow(row);
 
-                if(musicTable.type == MusicTable.LIBRARY) {
+                if(musicTable.getType() == MusicTable.LIBRARY) {
                     // Delete song from database by using filepath as an identifier
                     ShiTunes.db.deleteSong(selectedSongId);
-                } else if(musicTable.type == MusicTable.PLAYLIST){
+                } else if(musicTable.getType() == MusicTable.PLAYLIST){
                     ShiTunes.db.deleteSongFromPlaylist(selectedSongId, selectedPlaylist);
                 }
             }
-            updateAllWindows();
+            ShiTunes.updateAllWindows();
         }
     }
 
@@ -1178,47 +1181,62 @@ public class Window
      *
      */
     class PlaylistWindowListener implements WindowListener {
-        @Override
-        public void windowActivated(WindowEvent e) { }
+         @Override
+         public void windowActivated(WindowEvent e) {
+         }
 
-        @Override
-        public void windowClosed(WindowEvent e) {
-            // Remove window from list of application windows
-            ShiTunes.windows.remove(this);
-        }
+         @Override
+         public void windowClosed(WindowEvent e) {
+             // Remove window from list of application windows
+             ShiTunes.windows.remove(this);
+         }
 
-        @Override
-        public void windowClosing(WindowEvent e) {
-        }
+         @Override
+         public void windowClosing(WindowEvent e) {
+         }
 
-        @Override
-        public void windowDeactivated(WindowEvent e) {
-        }
+         @Override
+         public void windowDeactivated(WindowEvent e) {
+         }
 
-        @Override
-        public void windowDeiconified(WindowEvent e ) { }
+         @Override
+         public void windowDeiconified(WindowEvent e) {
+         }
 
-        @Override
-        public void windowOpened(WindowEvent e) { }
+         @Override
+         public void windowOpened(WindowEvent e) {
+         }
 
-        @Override
-        public void windowIconified(WindowEvent e) { }
+         @Override
+         public void windowIconified(WindowEvent e) {
+         }
     }
 
-    /*
-    * Updates the table model for all open windows
-    *
-    */
-    private void updateAllWindows() {
-        for(Window w : ShiTunes.windows) {
-            if(w.windowType == Window.MAIN) {
-                if(w.musicTable.type == MusicTable.LIBRARY) {
-                    w.musicTable.updateTableModel("Library");
-                }
-            } else {
-                w.musicTable.updateTableModel(w.selectedPlaylist);
-            }
-        }
+    /**
+     * Gets this Window object's type (MAIN or PLAYLIST)
+     *
+     * @return the window type of this Window
+     */
+    public int getWindowType() {
+        return windowType;
     }
 
+    /**
+     * Gets the MusicTable associated with this Window
+     *
+     * @return the MusicTable associated with this Window
+     */
+    public MusicTable getMusicTable() {
+        return musicTable;
+    }
+
+    /**
+     * Gets the name of the playlist that this current window is displaying
+     * (returns "Library" if it is the "Library" table)
+     *
+     * @return the MusicTable associated with this Window
+     */
+    public String getSelectedPlaylist() {
+        return selectedPlaylist;
+    }
 }

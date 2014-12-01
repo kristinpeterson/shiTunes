@@ -13,8 +13,8 @@ public class MusicTable {
     // To indicate MusicTable type
     public static int LIBRARY = 0;
     public static int PLAYLIST = 1;
-    public int type;
 
+    private int type;
     private JTable table;
     private int[] selectedSongRange;    // [min-index, max-index]
     private int selectedSongRow;
@@ -144,6 +144,15 @@ public class MusicTable {
      */
     public int getSelectedSongRow() {
         return selectedSongRow;
+    }
+
+    /**
+     * Gets this MusicTable object's type (LIBRARY or PLAYLIST)
+     *
+     * @return the table type
+     */
+    public int getType() {
+        return type;
     }
 
 }

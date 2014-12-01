@@ -28,4 +28,20 @@ public class ShiTunes {
         // Add main application window to list of ShiTunes windows
         windows.add(mainWindow);
     }
+
+    /*
+    * Updates the table model for all open windows
+    *
+    */
+    public static void updateAllWindows() {
+        for(Window w : windows) {
+            if(w.getWindowType() == Window.MAIN) {
+                if(w.getMusicTable().getType() == MusicTable.LIBRARY) {
+                    w.getMusicTable().updateTableModel("Library");
+                }
+            } else {
+                w.getMusicTable().updateTableModel(w.getSelectedPlaylist());
+            }
+        }
+    }
 }
