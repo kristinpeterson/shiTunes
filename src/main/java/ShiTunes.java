@@ -30,7 +30,7 @@ public class ShiTunes {
     }
 
     /*
-    * Updates the table model for all open windows
+    * Updates the table model for all application windows
     *
     */
     public static void updateAllWindows() {

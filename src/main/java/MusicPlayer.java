@@ -57,45 +57,14 @@ public class MusicPlayer {
     /**
      * Plays the selected song
      *
+     * @param filePath the file path of the song to play
      * @return true if song plays successfully
      */
-    public boolean play() {
-        try {
-            controller.open(new File(ShiTunes.db.getSongFilePath(getLoadedSongId())));
-            // play loaded song
-            controller.play();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    /**
-     * Plays the song indicated by filePath
-     * For quick play of a song via the File->Open
-     * menu item
-     *
-     * @return true if song plays successfully
-     */
-    public boolean quickPlay(String filePath) {
+    public boolean play(String filePath) {
         try {
             controller.open(new File(filePath));
             // play loaded song
             controller.play();
-
-            /*
-            * Set loaded song index to -1
-            * to indicate that no song is loaded.
-            *
-            * Since this is a quick play operation
-            * activated via the File->Open menu option
-            * when this song finishes, the next loaded
-            * song will be 0 (the first in the current table)
-            *
-            */
-            loadedSongId = 0;
-
             return true;
         } catch (Exception e) {
             e.printStackTrace();

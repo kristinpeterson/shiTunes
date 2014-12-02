@@ -16,8 +16,6 @@ public class MusicTable {
 
     private int type;
     private JTable table;
-    private int[] selectedSongRange;    // [min-index, max-index]
-    private int selectedSongRow;
 
     /**
      * The columns of the SONG table properly formatted for GUI
@@ -118,41 +116,30 @@ public class MusicTable {
     }
 
     /**
-     * Sets the selected songs index range
-     *
-     * @param min the minimum index of the selected range of songs
-     * @param max the maximum index of the selected range of songs
-     */
-    public void setSelectedSongs(int min, int max) {
-        selectedSongRange = new int[] {min, max};
-        selectedSongRow = min;
-    }
-
-    /**
-     * Gets the selected songs index range
-     *
-     * @return the selected song range as an array [min-index, max-index]
-     */
-    public int[] getSelectedSongRange() {
-        return selectedSongRange;
-    }
-
-    /**
-     * Gets the selected songs row index
-     *
-     * @return the selected song row index
-     */
-    public int getSelectedSongRow() {
-        return selectedSongRow;
-    }
-
-    /**
      * Gets this MusicTable object's type (LIBRARY or PLAYLIST)
      *
      * @return the table type
      */
     public int getType() {
         return type;
+    }
+
+    /**
+     * Gets min index of the selected row range.
+     * If single row selected, this will double as the selected row getter.
+     *
+     */
+    public int getMinSelectedRow() {
+        return table.getSelectedRows()[0];
+    }
+
+    /**
+     * Gets max index of the selected row range.
+     *
+     */
+    public int getMaxSelectedRow() {
+        int maxIndex = table.getSelectedRows().length - 1;
+        return table.getSelectedRows()[maxIndex];
     }
 
 }

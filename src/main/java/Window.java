@@ -1,12 +1,11 @@
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayerEvent;
 import javazoom.jlgui.basicplayer.BasicPlayerListener;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -35,7 +34,7 @@ public class Window
        extends JFrame
        implements BasicPlayerListener {
 
-    // Window type
+    // Window types
     public static int MAIN = 0;
     public static int PLAYLIST = 1;
 
@@ -60,22 +59,17 @@ public class Window
      */
     private int playerState;
     private int loadedSongBytes;
-
     private int windowType;
     private JFrame windowFrame;
     private JScrollPane musicTableScrollPane;
-
     private MusicTable musicTable;
     private JPopupMenu musicTablePopupMenu;
     private JMenu addSongToPlaylistSubMenu;
     private MusicTablePopupListener musicTablePopupListener = new MusicTablePopupListener();
-
     private JPopupMenu playlistPopupMenu;
-
     private JTree playlistPanelTree;
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
-    
     private MusicPlayer player;
 
     /**
@@ -211,9 +205,6 @@ public class Window
         musicTable.getTable().setFillsViewportHeight(true);
 
         /* Add listeners */
-
-        // Add Library table listener for selected row(s)
-        musicTable.getTable().getSelectionModel().addListSelectionListener(new TableItemSelectionListener());
 
         // Create right-click popup menu and set popup listener
         createMusicTablePopupMenu();
@@ -474,21 +465,8 @@ public class Window
     /* ********************* */
 
     /**
-     * Handles clicks on items within the music table
-     *
-     */
-    class TableItemSelectionListener implements ListSelectionListener {
-        @Override
-        public void valueChanged(ListSelectionEvent event) {
-            // set the selection range (min == max if only one selected)
-            int min = ((DefaultListSelectionModel)event.getSource()).getMinSelectionIndex();
-            int max = ((DefaultListSelectionModel)event.getSource()).getMaxSelectionIndex();
-            musicTable.setSelectedSongs(min, max);
-        }
-    }
-
-    /**
-     * Double Click Listener for the music table
+     * Double Click Listener:
+     * <p>
      * Plays the song that is double clicked.
      */
     class DoubleClickListener extends MouseAdapter {
@@ -498,7 +476,7 @@ public class Window
                 int index = musicTable.getTable().getSelectedRow();
                 int songId = Integer.parseInt(musicTable.getTable().getValueAt(index, 0).toString());
                 player.setLoadedSongId(songId);
-                player.play();
+                player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId()));
             }
         }
     }
@@ -769,8 +747,8 @@ public class Window
         }
 
         public void actionPerformed(ActionEvent event) {
-            int min = musicTable.getSelectedSongRange()[0];
-            int max = musicTable.getSelectedSongRange()[1];
+            int min = musicTable.getMinSelectedRow();
+            int max = musicTable.getMaxSelectedRow();
 
             for(int row = max; row >= min; row--) {
                 String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
@@ -797,7 +775,7 @@ public class Window
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            int previousSongIndex = musicTable.getSelectedSongRow() - 1;
+            int previousSongIndex = musicTable.getTable().getSelectedRow() - 1;
 
             // Only skip to previous if the loaded song is not the first item in the table
             // and the loaded song is not set to -1 flag (which indicates that the
@@ -813,25 +791,23 @@ public class Window
                     int songId = Integer.parseInt(musicTable.getTable().getValueAt(previousSongIndex, 0).toString());
                     player.setLoadedSongId(songId);
                     musicTable.getTable().setRowSelectionInterval(previousSongIndex, previousSongIndex);
-                    player.play();
+                    player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId()));
                 }
             }
         }
     }
 
     /**
-     * A listener for the Play Song action
+     * Play Listener:
+     * <p>
+     * Plays the selected song loaded, if the conditions are right.
+     *
      */
     class PlayListener implements ActionListener {
-        /**
-         * Calls the MusicPlayer play function when event occurs
-         *
-         * @param e the ActionEvent object for this event
-         */
         public void actionPerformed(ActionEvent e) {
             // boolean indicator, true if selected song is currently loaded to player
-            boolean selectedSongIsLoaded = musicTable.getTable().getSelectedRow()
-                                    == player.getLoadedSongId();
+            boolean selectedSongIsLoaded =
+                    musicTable.getTable().getSelectedRow() == player.getLoadedSongId();
             if (selectedSongIsLoaded && playerState == BasicPlayerEvent.PAUSED) {
                 // if selected song is current song on player
                 // and player.state == paused
@@ -858,13 +834,16 @@ public class Window
                     // stop player
                     player.stop();
                 }
-                player.play();
+                player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId()));
             }
         }
     }
 
     /**
-     * A listener for the Pause Song action
+     * Pause Listener:
+     * <p>
+     * Pauses the currently playing song
+     *
      */
     class PauseListener implements ActionListener {
         /**
@@ -881,56 +860,49 @@ public class Window
     }
 
     /**
-     * A listener for the Stop Song action
+     * Stops Listener:
+     * <p>
+     * Stops currently playing song
+     *
      */
     class StopListener implements ActionListener {
-        /**
-         * Calls the MusicPlayer stop function when event occurs
-         *
-         * @param e the ActionEvent object for this event
-         */
         public void actionPerformed(ActionEvent e) {
             player.stop();
         }
     }
 
     /**
-     * A listener for the Next Song action
+     * Next Listener:
+     * <p>
+     * Highlights and plays the next song in the table (if there is one)
+     *
      */
     class NextListener implements ActionListener {
-        /**
-         * If player state is currently playing/resumed
-         * stop the current song, increment the song index
-         * and play the next song
-         *
-         * @param e the ActionEvent object for this event
-         */
         public void actionPerformed(ActionEvent e) {
-            int nextSongIndex = musicTable.getSelectedSongRow() + 1;
+            int nextSongIndex = musicTable.getTable().getSelectedRow() + 1;
             int lastItemInTable = musicTable.getTable().getRowCount() - 1;
 
             // Only skip to next if the loaded song is not the last item in the table
-            // and the loaded song is not set to -1 flag (which indicates that the
-            // loaded song was opened via the File->Open menu)
             if(nextSongIndex <= lastItemInTable) {
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
-                    // if player is currently playing/resumed
-                    // stop current song
-                    // skip loaded song to next song
-                    // play next song
-                    player.stop();
+                    player.stop();  // stop currently playing song
                     int songId = Integer.parseInt(musicTable.getTable().getValueAt(nextSongIndex, 0).toString());
-                    player.setLoadedSongId(songId);
-                    musicTable.getTable().setRowSelectionInterval(nextSongIndex, nextSongIndex);
-                    player.play();
+                    player.setLoadedSongId(songId); // set player loaded song to next song
+                    musicTable.getTable().setRowSelectionInterval(nextSongIndex, nextSongIndex); // highlight next song
+                    player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId())); // play next song
                 }
             }
         }
     }
 
     /**
-     * A Listener for the volume slider
+     * Volume listener:
+     * <p>
+     * Takes value from volume slider
+     * and converts to double in range [0.0, 1.0] to
+     * set basic player gain (volume) to a value it understands.
+     *
      */
     class VolumeListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
@@ -949,14 +921,11 @@ public class Window
     /* ********************* */
 
     /**
-     * Open item listener for the Main Menu
+     * Open Item listener:
      * <p>
-     * When "Open" is selected from the main menu,
-     * a file chooser opens and whichever song is selected
-     * is added to the Music Library (temporarily) and played
-     * <p>
-     * Note: this is different from the "Add Song" command in that
-     * the song is not added to the ShiBase database
+     * Opens and plays the selected song using
+     * "quickPlay" method, which
+     *
      */
     class OpenItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
@@ -974,18 +943,22 @@ public class Window
                         // stop player
                         player.stop();
                     }
-                    player.quickPlay(selectedSong.getFilePath());
+                    player.play(selectedSong.getFilePath());
                 }
             }
     }
 
     /**
-     * Add item listener for the Main Menu
+     * Add Song Listener:
      * <p>
-     * When "Add Song" is selected from the main menu
-     * it is added to the database, if there is an error
-     * when adding the song to the database (such as the song
-     * already existing)
+     * Opens a file chooser allowing user to select a song file
+     * to add to the library/playlist.  The selected song is then added
+     * to the library/playlist.
+     * <p>
+     * Then all application Windows tables are updated in the
+     * event that the song(s) being removed from the table is
+     * also present in another window/table.
+     *
      */
     class AddSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
@@ -1020,18 +993,23 @@ public class Window
     }
 
     /**
-     * Delete item listener for the Main Menu
+     * Delete Song Listener:
      * <p>
-     * When "Delete Song" is selected from the main menu
-     * the selected song is deleted from the database
-     * and removed from the music table listing
+     * Deletes the selected range of songs from the table &
+     * the database (if MusicTable.LIBRARY) or playlist
+     * (if MusicTable.PLAYLIST).
+     * <p>
+     * Then all application Windows tables are updated in the
+     * event that the song(s) being removed from the table is
+     * also present in another window/table.
+     *
      */
     class DeleteSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             // range[0] = min index of selected range
             // range[1] = max index of selected range
-            int min = musicTable.getSelectedSongRange()[0];
-            int max = musicTable.getSelectedSongRange()[1];
+            int min = musicTable.getMinSelectedRow();
+            int max = musicTable.getMaxSelectedRow();
 
             DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
 
@@ -1060,15 +1038,18 @@ public class Window
                     ShiTunes.db.deleteSongFromPlaylist(selectedSongId, selectedPlaylist);
                 }
             }
+
+            // Update all windows in the event that the song(s) being removed from the table
+            // is also present in another window/table
             ShiTunes.updateAllWindows();
         }
     }
 
     /**
-     * Exit item listener for the Main Menu.
+     * Exit item listener:
      * <p>
-     * When "Exit" is selected from the main menu the database connection
-     * is closed and the shiTunes program exits gracefully
+     * Closes the database connection and
+     * exit the shiTunes program gracefully
      *
      */
     class ExitItemListener implements ActionListener {

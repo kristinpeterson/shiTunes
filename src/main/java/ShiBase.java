@@ -2,34 +2,23 @@ import java.sql.*;
 import java.util.ArrayList;
 
 /**
- * The ShiBase class contains methods for connecting to
- * and interacting with the shiTunes database
+ * The ShiBase class contains methods for connecting to,
+ * building and interacting with the shiTunes database
  *
  * @author shiTunes inc.
  */
 public class ShiBase {
 
-    /**
-     * The database name
-     */
     public static String DB_NAME = "ShiBase";
-    /**
-     * Table Names
-     */
     public static final String SONG_TABLE = "SONG";
     public static final String PLAYLIST_TABLE = "PLAYLIST";
     public static final String PLAYLIST_SONG_TABLE = "PLAYLIST_SONG";
 
-    // The database table column names
-    // SONG Table
+
     private static final String[] SONG_COLUMNS =  {"songId", "artist", "title", "album", "yearReleased",
             "genre", "filePath", "comment"};
-    // PLAYLIST Table
     private static final String[] PLAYLIST_COLUMNS = {"playlistId", "playlistName"};
-    // PLAYLIST_SONG Table
     private static final String[] PLAYLIST_SONG_COLUMNS = {"playlistId", "songId"};
-
-    // Database connection related variables
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
     private Connection conn;
