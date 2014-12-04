@@ -35,10 +35,8 @@ public class ShiTunes {
     */
     public static void updateAllWindows() {
         for(Window w : windows) {
-            if(w.getWindowType() == Window.MAIN) {
-                if(w.getMusicTable().getType() == MusicTable.LIBRARY) {
-                    w.getMusicTable().updateTableModel("Library");
-                }
+            if (w.getMusicTable().getType() == MusicTable.LIBRARY) {
+                w.getMusicTable().updateTableModel("Library");
             } else {
                 w.getMusicTable().updateTableModel(w.getSelectedPlaylist());
             }
