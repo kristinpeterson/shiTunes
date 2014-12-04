@@ -20,8 +20,7 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -66,11 +65,14 @@ public class Window
     private JPopupMenu musicTablePopupMenu;
     private JMenu addSongToPlaylistSubMenu;
     private MusicTablePopupListener musicTablePopupListener = new MusicTablePopupListener();
+    private ColumnDisplayPopupListener columnDisplayPopupListener = new ColumnDisplayPopupListener();
     private JPopupMenu playlistPopupMenu;
+    private JPopupMenu showColumnsPopupMenu;
     private JTree playlistPanelTree;
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
     private MusicPlayer player;
+    private int[] showColumnList = new int[5];
 
     /**
      * The Window default constructor
@@ -206,9 +208,13 @@ public class Window
 
         /* Add listeners */
 
-        // Create right-click popup menu and set popup listener
+        // Create right-click popup menu and set popup listener up JTable
         createMusicTablePopupMenu();
         musicTable.getTable().addMouseListener(musicTablePopupListener);
+
+        //creates the right click menu for column displays
+        createShowColumnsPopupMenu();
+        musicTable.getTable().getTableHeader().addMouseListener(columnDisplayPopupListener);
 
         // Add double click listener to play selected song.
         musicTable.getTable().addMouseListener(new DoubleClickListener());
@@ -427,6 +433,146 @@ public class Window
     }
 
     /**
+     * Initializes a popup menu when a user right clicks library columns.
+     * Shows checkboxes to allow user to select which columns to display.
+     */
+    private void createShowColumnsPopupMenu() {
+        showColumnsPopupMenu = new JPopupMenu();
+        final JCheckBoxMenuItem showArtist = new JCheckBoxMenuItem("Artist");
+        final JCheckBoxMenuItem showAlbum = new JCheckBoxMenuItem("Album");
+        final JCheckBoxMenuItem showYear = new JCheckBoxMenuItem("Year");
+        final JCheckBoxMenuItem showGenre = new JCheckBoxMenuItem("Genre");
+        final JCheckBoxMenuItem showComment = new JCheckBoxMenuItem("Comment");
+
+        String readLine;
+
+        try {
+            FileReader fileReader = new FileReader("src/main/resources/txt/displayColumnsData.txt");
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            readLine = bufferedReader.readLine();
+            String[] sList = readLine.split(",");
+            bufferedReader.close();
+
+            for (int i = 0; i < sList.length; i++) {
+                showColumnList[i] = Integer.parseInt(sList[i]);
+            }
+        }
+        catch (FileNotFoundException ex) {
+            System.out.println("ERROR: File not found.");
+        }
+        catch (IOException ex) {
+            System.out.println("ERROR: Error reading file.");
+        }
+
+        //Read in previous state of column display and update to reflect columns' state
+        if (showColumnList[0] == 1) {showArtist.setSelected(true);}
+        else {musicTable.hide(1);}
+        if (showColumnList[1] == 1) {showAlbum.setSelected(true);}
+        else {musicTable.hide(3);}
+        if (showColumnList[2] == 1) {showYear.setSelected(true);}
+        else {musicTable.hide(4);}
+        if (showColumnList[3] == 1) {showGenre.setSelected(true);}
+        else {musicTable.hide(5);}
+        if (showColumnList[4] == 1) {showComment.setSelected(true);}
+        else {musicTable.hide(7);}
+
+        showColumnsPopupMenu.add(showArtist);
+        showColumnsPopupMenu.add(showAlbum);
+        showColumnsPopupMenu.add(showYear);
+        showColumnsPopupMenu.add(showGenre);
+        showColumnsPopupMenu.add(showComment);
+
+        ActionListener artistCheckboxListener = new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if (showArtist.isSelected()) {
+                    musicTable.show(1);
+                    showColumnList[0] = 1;
+                }
+                else {
+                    musicTable.hide(1);
+                    showColumnList[0] = 0;
+                }
+                SaveColumnsDisplay();
+            }
+        };
+
+        ActionListener albumCheckboxListener = new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if (showAlbum.isSelected()) {
+                    musicTable.show(3);
+                    showColumnList[1] = 1;
+                }
+                else {
+                    musicTable.hide(3);
+                    showColumnList[1] = 0;
+                }
+                SaveColumnsDisplay();
+            }
+        };
+
+        ActionListener yearCheckboxListener = new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if (showYear.isSelected()) {
+                    musicTable.show(4);
+                    showColumnList[2] = 1;
+                }
+                else {
+                    musicTable.hide(4);
+                    showColumnList[2] = 0;
+                }
+                SaveColumnsDisplay();
+            }
+        };
+
+        ActionListener genreCheckboxListener = new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if (showGenre.isSelected()) {
+                    musicTable.show(5);
+                    showColumnList[3] = 1;
+                }
+                else {
+                    musicTable.hide(5);
+                    showColumnList[3] = 0;
+                }
+                SaveColumnsDisplay();
+            }
+        };
+
+        ActionListener commentCheckboxListener = new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if (showComment.isSelected()) {
+                    musicTable.show(7);
+                    showColumnList[4] = 1;
+                }
+                else {
+                    musicTable.hide(7);
+                    showColumnList[4] = 0;
+                }
+                SaveColumnsDisplay();
+            }
+        };
+
+        showArtist.addActionListener(artistCheckboxListener);
+        showAlbum.addActionListener(albumCheckboxListener);
+        showYear.addActionListener(yearCheckboxListener);
+        showGenre.addActionListener(genreCheckboxListener);
+        showComment.addActionListener(commentCheckboxListener);
+    }
+
+    public void SaveColumnsDisplay() {
+        try {
+            FileWriter fileWriter = new FileWriter("src/main/resources/txt/displayColumnsData.txt");
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter.write(showColumnList[0] + "," + showColumnList[1] + "," + showColumnList[2] + "," +
+                    showColumnList[3] + "," + showColumnList[4]);
+            bufferedWriter.close();
+        }
+        catch (IOException ex) {
+            System.out.println("ERROR: Error writing to file.");
+        }
+    }
+
+    /**
      * Updates the playlist sub menu in the music table's popup menu:
      * <ul>
      *     <li>Gets an updated list of playlist names from database</li>
@@ -482,10 +628,8 @@ public class Window
     }
 
     /**
-     * Popup listener for the right click menu
-     * <p>
-     * Interprets right mouse click to trigger
-     * showing the popup menu
+     * Popup listener for the right click menu on Music Table
+     *
      */
     class MusicTablePopupListener extends MouseAdapter {
         @Override
@@ -501,6 +645,26 @@ public class Window
         public void maybeShowPopup(MouseEvent e) {
             if (e.isPopupTrigger()) {
                 musicTablePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
+    }
+
+    /**
+     * Popup listener for the right click menu on Column Titles
+     *
+     */
+    class ColumnDisplayPopupListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+        public void maybeShowPopup(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                showColumnsPopupMenu.show(e.getComponent(), e.getX(), e.getY());
             }
         }
     }

@@ -67,12 +67,20 @@ public class MusicTable {
         hide(6);  // file path
     }
 
-    private void hide(int index) {
+    public void hide(int index) {
         TableColumn column = table.getColumnModel().getColumn(index);
         column.setMinWidth(0);
         column.setMaxWidth(0);
         column.setWidth(0);
         column.setPreferredWidth(0);
+    }
+
+    public void show(int index) {
+        TableColumn column = table.getColumnModel().getColumn(index);
+        column.setMinWidth(10);
+        column.setMaxWidth(500);
+        column.setWidth(10);
+        column.setPreferredWidth(80);
     }
 
     /**
