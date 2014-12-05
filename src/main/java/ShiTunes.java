@@ -11,11 +11,10 @@ public class ShiTunes {
     static Window mainWindow;
     static ArrayList<Window> windows;
 
-    static {
-        db = new ShiBase();
-    }
-
     public static void main(String[] args) {
+        // initialize db
+        db = new ShiBase();
+
         // An array list of shiTunes application windows
         windows = new ArrayList<>();
 

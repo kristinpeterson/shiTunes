@@ -72,7 +72,6 @@ public class Window
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
     private MusicPlayer player;
-    private int[] showColumnList = new int[5];
 
     /**
      * The Window default constructor
@@ -444,37 +443,17 @@ public class Window
         final JCheckBoxMenuItem showGenre = new JCheckBoxMenuItem("Genre");
         final JCheckBoxMenuItem showComment = new JCheckBoxMenuItem("Comment");
 
-        String readLine;
-
-        try {
-            FileReader fileReader = new FileReader("src/main/resources/txt/displayColumnsData.txt");
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
-            readLine = bufferedReader.readLine();
-            String[] sList = readLine.split(",");
-            bufferedReader.close();
-
-            for (int i = 0; i < sList.length; i++) {
-                showColumnList[i] = Integer.parseInt(sList[i]);
-            }
-        }
-        catch (FileNotFoundException ex) {
-            System.out.println("ERROR: File not found.");
-        }
-        catch (IOException ex) {
-            System.out.println("ERROR: Error reading file.");
-        }
-
-        //Read in previous state of column display and update to reflect columns' state
-        if (showColumnList[0] == 1) {showArtist.setSelected(true);}
-        else {musicTable.hide(1);}
-        if (showColumnList[1] == 1) {showAlbum.setSelected(true);}
-        else {musicTable.hide(3);}
-        if (showColumnList[2] == 1) {showYear.setSelected(true);}
-        else {musicTable.hide(4);}
-        if (showColumnList[3] == 1) {showGenre.setSelected(true);}
-        else {musicTable.hide(5);}
-        if (showColumnList[4] == 1) {showComment.setSelected(true);}
-        else {musicTable.hide(7);}
+        // Get previous state of column display and update to reflect columns' state
+        if (ShiTunes.db.getColumnVisible("Artist")) {showArtist.setSelected(true);}
+        else {musicTable.hide("Artist");}
+        if (ShiTunes.db.getColumnVisible("Album")) {showAlbum.setSelected(true);}
+        else {musicTable.hide("Album");}
+        if (ShiTunes.db.getColumnVisible("Year")) {showYear.setSelected(true);}
+        else {musicTable.hide("Year");}
+        if (ShiTunes.db.getColumnVisible("Genre")) {showGenre.setSelected(true);}
+        else {musicTable.hide("Genre");}
+        if (ShiTunes.db.getColumnVisible("Comment")) {showComment.setSelected(true);}
+        else {musicTable.hide("Comment");}
 
         showColumnsPopupMenu.add(showArtist);
         showColumnsPopupMenu.add(showAlbum);
@@ -485,70 +464,55 @@ public class Window
         ActionListener artistCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 if (showArtist.isSelected()) {
-                    musicTable.show(1);
-                    showColumnList[0] = 1;
+                    musicTable.show("Artist");
                 }
                 else {
-                    musicTable.hide(1);
-                    showColumnList[0] = 0;
+                    musicTable.hide("Artist");
                 }
-                SaveColumnsDisplay();
             }
         };
 
         ActionListener albumCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 if (showAlbum.isSelected()) {
-                    musicTable.show(3);
-                    showColumnList[1] = 1;
+                    musicTable.show("Album");
                 }
                 else {
-                    musicTable.hide(3);
-                    showColumnList[1] = 0;
+                    musicTable.hide("Album");
                 }
-                SaveColumnsDisplay();
             }
         };
 
         ActionListener yearCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 if (showYear.isSelected()) {
-                    musicTable.show(4);
-                    showColumnList[2] = 1;
+                    musicTable.show("Year");
                 }
                 else {
-                    musicTable.hide(4);
-                    showColumnList[2] = 0;
+                    musicTable.hide("Year");
                 }
-                SaveColumnsDisplay();
             }
         };
 
         ActionListener genreCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 if (showGenre.isSelected()) {
-                    musicTable.show(5);
-                    showColumnList[3] = 1;
+                    musicTable.show("Genre");
                 }
                 else {
-                    musicTable.hide(5);
-                    showColumnList[3] = 0;
+                    musicTable.hide("Genre");
                 }
-                SaveColumnsDisplay();
             }
         };
 
         ActionListener commentCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 if (showComment.isSelected()) {
-                    musicTable.show(7);
-                    showColumnList[4] = 1;
+                    musicTable.show("Comment");
                 }
                 else {
-                    musicTable.hide(7);
-                    showColumnList[4] = 0;
+                    musicTable.hide("Comment");
                 }
-                SaveColumnsDisplay();
             }
         };
 
@@ -557,19 +521,6 @@ public class Window
         showYear.addActionListener(yearCheckboxListener);
         showGenre.addActionListener(genreCheckboxListener);
         showComment.addActionListener(commentCheckboxListener);
-    }
-
-    public void SaveColumnsDisplay() {
-        try {
-            FileWriter fileWriter = new FileWriter("src/main/resources/txt/displayColumnsData.txt");
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            bufferedWriter.write(showColumnList[0] + "," + showColumnList[1] + "," + showColumnList[2] + "," +
-                    showColumnList[3] + "," + showColumnList[4]);
-            bufferedWriter.close();
-        }
-        catch (IOException ex) {
-            System.out.println("ERROR: Error writing to file.");
-        }
     }
 
     /**

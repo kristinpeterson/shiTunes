@@ -13,12 +13,14 @@ public class ShiBase {
     public static final String SONG_TABLE = "SONG";
     public static final String PLAYLIST_TABLE = "PLAYLIST";
     public static final String PLAYLIST_SONG_TABLE = "PLAYLIST_SONG";
+    public static final String COLUMN_CONFIG_TABLE = "COLUMN_CONFIG";
 
 
     private static final String[] SONG_COLUMNS =  {"songId", "artist", "title", "album", "yearReleased",
             "genre", "filePath", "comment"};
     private static final String[] PLAYLIST_COLUMNS = {"playlistId", "playlistName"};
     private static final String[] PLAYLIST_SONG_COLUMNS = {"playlistId", "songId"};
+    private static final String[] COLUMN_CONFIG_COLUMNS = {"columnName", "columnIndex", "columnVisible"};
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
     private Connection conn;
@@ -54,8 +56,7 @@ public class ShiBase {
             conn = DriverManager.getConnection(PROTOCOL + DB_NAME);
             // getConnection() can also have a second parameter, Properties,  to add username/password etc
             connected = true;
-        }
-        catch (Exception except) {
+        } catch (Exception except) {
             // If database does not exist; create database
             createDatabase();
         }
@@ -132,6 +133,7 @@ public class ShiBase {
         createSongTable();
         createPlaylistTable();
         createPlaylistSongTable();
+        createColumnConfigTable();
     }
 
     /* ******************* */
@@ -354,9 +356,9 @@ public class ShiBase {
      * @return the given result from the SONG table as a String array
      */
     private String[] getSongRow(ResultSet rs) {
-        String[] song = new String[MusicTable.SONG_COLUMN_NAMES.length];
+        String[] song = new String[SONG_COLUMNS.length];
         try {
-            for(int i = 0; i < MusicTable.SONG_COLUMN_NAMES.length; i++) {
+            for(int i = 0; i < SONG_COLUMNS.length; i++) {
                 song[i] = rs.getString(SONG_COLUMNS[i]);
             }
         } catch (SQLException e) {
@@ -616,5 +618,172 @@ public class ShiBase {
             sqlExcept.printStackTrace();
         }
         return playlistId;
+    }
+
+
+    /* ********************** */
+    /* ********************** */
+    /* COLUMN TABLE METHODS   */
+    /* ********************** */
+    /* ********************** */
+
+    /**
+     * Creates COLUMN_CONFIG table, if it doesn't already exist
+     *
+     * @return true if table was created successfully
+     */
+    public boolean createColumnConfigTable() {
+        String query;
+        // Create Table
+        try {
+            query = "CREATE TABLE " + COLUMN_CONFIG_TABLE +
+                    " (columnName VARCHAR(50)," +
+                    "columnIndex INTEGER NOT NULL, " +
+                    "columnVisible BOOLEAN NOT NULL)";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+            for(int i = 0; i < MusicTable.SONG_COLUMN_NAMES.length; i++) {
+                query = "INSERT INTO " + COLUMN_CONFIG_TABLE +
+                        " (columnName, columnIndex, columnVisible)" +
+                        " VALUES (?, ?, ?)";
+                stmt = conn.prepareStatement(query);
+                String columnName = MusicTable.SONG_COLUMN_NAMES[i];
+                stmt.setString(1, columnName);
+                stmt.setInt(2, i);
+                if (columnName.equals("ID") || columnName.equals("File Path")) {
+                    stmt.setBoolean(3, false);
+                } else {
+                    stmt.setBoolean(3, true);
+                }
+                stmt.execute();
+                stmt.close();
+            }
+            return true;
+        } catch (SQLException sqlExcept) {
+            // Table Exists
+        }
+        return false;
+    }
+
+    /**
+     * Accessor method to get a columns visibility
+     *
+     * @return boolean indidcating whether column is visible
+     * @param columnName the column name to search for
+     */
+    public boolean getColumnVisible(String columnName) {
+        boolean columnVisible = false;
+        try {
+            // Get all playlist names
+            String query = "SELECT columnVisible FROM " + COLUMN_CONFIG_TABLE +
+                    " WHERE columnName=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, columnName);
+            ResultSet resultSet = stmt.executeQuery();
+            resultSet.next();
+            columnVisible = resultSet.getBoolean("columnVisible");
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return columnVisible;
+    }
+
+    /**
+     * Accessor method to get a columns view index
+     *
+     * @return columns view index
+     * @param columnName the column name to search for
+     */
+    public int getColumnIndex(String columnName) {
+        int columnIndex = -1;
+        try {
+            // Get all playlist names
+            String query = "SELECT columnIndex FROM " + COLUMN_CONFIG_TABLE +
+                    " WHERE columnName=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, columnName);
+            ResultSet resultSet = stmt.executeQuery();
+            resultSet.next();
+            columnIndex = resultSet.getInt("columnIndex");
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return columnIndex;
+    }
+
+    /**
+     * Mutator method to set a columns visibility
+     *
+     * @return boolean indicating whether column is visible
+     * @param index the column name of the column being changed
+     * @param visible the visible to set for the column
+     */
+    public void setColumnVisible(int index, boolean visible) {
+        try {
+            // Get all playlist names
+            String query = "UPDATE " + COLUMN_CONFIG_TABLE +
+                    " SET columnVisible=? " +
+                    " WHERE columnIndex=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setBoolean(1, visible);
+            stmt.setInt(2, index);
+            stmt.execute();
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+    }
+
+    /**
+     * Mutator method to set a column view index based on column name
+     *
+     * @param columnName column name to be changed
+     * @param index view index of column
+     */
+    public void setColumnIndex(String columnName, int index) {
+        try {
+            String query = "UPDATE " + COLUMN_CONFIG_TABLE +
+                    " SET columnIndex=? " +
+                    " WHERE columnName=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, index);
+            stmt.setString(2, columnName);
+            stmt.execute();
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+    }
+
+    /**
+     * Get array of column view indexes in order
+     *
+     * @return the column view indexes in order
+     */
+    public int[] getColumnOrder() {
+        int[] columns = new int[SONG_COLUMNS.length];
+        try {
+            // Get all playlist names
+            String query = "SELECT columnIndex FROM " + COLUMN_CONFIG_TABLE;
+            stmt = conn.prepareStatement(query);
+            ResultSet resultSet = stmt.executeQuery();
+            int i = 0;
+            while(resultSet.next()) {
+                columns[i] = resultSet.getInt("columnIndex");
+                i++;
+            }
+            stmt.close();
+        }
+        catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return columns;
     }
 }
