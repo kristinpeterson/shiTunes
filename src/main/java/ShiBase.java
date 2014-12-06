@@ -44,12 +44,12 @@ public class ShiBase {
     /* ************************ */
     /* ************************ */
 
-    /**
+    /*
      * Connects to the database, creates database if not already
      * created
      *
      */
-    public void connect() {
+    private void connect() {
         try {
             Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
             //Get a connection
@@ -60,6 +60,35 @@ public class ShiBase {
             // If database does not exist; create database
             createDatabase();
         }
+    }
+
+    /*
+     * Creates ShiBase database
+     *
+     * @return true if database was created successfully
+     */
+    private boolean createDatabase() {
+        try {
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
+            //Get a connection
+            conn = DriverManager.getConnection(PROTOCOL + DB_NAME + CREATE);
+            // getConnection() can also have a second parameter, Properties,  to add username/password etc
+            connected = true;
+            return true;
+        } catch (Exception except) {
+            except.printStackTrace();
+            return false;
+        }
+    }
+
+    /*
+     * Creates the database tables, if not already present
+     */
+    private void createTables() {
+        createSongTable();
+        createPlaylistTable();
+        createPlaylistSongTable();
+        createColumnConfigTable();
     }
 
     /**
@@ -87,25 +116,6 @@ public class ShiBase {
     }
 
     /**
-     * Creates ShiBase database
-     *
-     * @return true if database was created successfully
-     */
-    public boolean createDatabase() {
-        try {
-            Class.forName("org.apache.derby.jdbc.EmbeddedDriver").newInstance();
-            //Get a connection
-            conn = DriverManager.getConnection(PROTOCOL + DB_NAME + CREATE);
-            // getConnection() can also have a second parameter, Properties,  to add username/password etc
-            connected = true;
-            return true;
-        } catch (Exception except) {
-            except.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
      * Drops the given table from ShiBase database
      *
      * @return true if the table was dropped successfully
@@ -126,28 +136,18 @@ public class ShiBase {
         return true;
     }
 
-    /**
-     * Creates the database tables, if not already present
-     */
-    public void createTables() {
-        createSongTable();
-        createPlaylistTable();
-        createPlaylistSongTable();
-        createColumnConfigTable();
-    }
-
     /* ******************* */
     /* ******************* */
     /* SONG TABLE  METHODS */
     /* ******************* */
     /* ******************* */
 
-    /**
+    /*
      * Creates SONG table, if it doesn't already exist
      *
      * @return true if table was created successfully
      */
-    public boolean createSongTable() {
+    private boolean createSongTable() {
         try {
             String query = "CREATE TABLE " + SONG_TABLE +
                     " (songId INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)," +
@@ -373,6 +373,28 @@ public class ShiBase {
     /* ********************** */
     /* ********************** */
 
+    /*
+     * Create the PLAYLIST table
+     *
+     * @return true if table created successfully
+     */
+    private boolean createPlaylistTable() {
+        try {
+            String query = "CREATE TABLE " + PLAYLIST_TABLE +
+                    " (playlistId INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1), " +
+                    "playlistName VARCHAR(100) UNIQUE NOT NULL, " +
+                    "PRIMARY KEY (playlistId))";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+            return true;
+        }
+        catch (SQLException sqlExcept) {
+            // Table Exists
+        }
+        return false;
+    }
+
     /**
      * Accessor method to get all playlist names
      *
@@ -395,28 +417,6 @@ public class ShiBase {
             sqlExcept.printStackTrace();
         }
         return playlistNames;
-    }
-
-    /**
-     * Create the PLAYLIST table
-     *
-     * @return true if table created successfully
-     */
-    public boolean createPlaylistTable() {
-        try {
-            String query = "CREATE TABLE " + PLAYLIST_TABLE +
-                    " (playlistId INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1), " +
-                    "playlistName VARCHAR(100) UNIQUE NOT NULL, " +
-                    "PRIMARY KEY (playlistId))";
-            stmt = conn.prepareStatement(query);
-            stmt.execute();
-            stmt.close();
-            return true;
-        }
-        catch (SQLException sqlExcept) {
-            // Table Exists
-        }
-        return false;
     }
 
     /**
@@ -520,13 +520,13 @@ public class ShiBase {
         return false;
     }
 
-    /**
+    /*
      * Create the junction table that will associate a Song with
      * a Playlist by Primary Key (id)
      *
      * @return true if table created successfully
      */
-    public boolean createPlaylistSongTable() {
+    private boolean createPlaylistSongTable() {
         try {
             String query = "CREATE TABLE " + PLAYLIST_SONG_TABLE +
                     "(playlistId INTEGER NOT NULL, " +
@@ -627,34 +627,34 @@ public class ShiBase {
     /* ********************** */
     /* ********************** */
 
-    /**
+    /*
      * Creates COLUMN_CONFIG table, if it doesn't already exist
      *
      * @return true if table was created successfully
      */
-    public boolean createColumnConfigTable() {
+    private boolean createColumnConfigTable() {
         String query;
-        // Create Table
         try {
+            // Create Table
             query = "CREATE TABLE " + COLUMN_CONFIG_TABLE +
                     " (columnName VARCHAR(50)," +
-                    "columnIndex INTEGER NOT NULL, " +
                     "columnVisible BOOLEAN NOT NULL)";
             stmt = conn.prepareStatement(query);
             stmt.execute();
             stmt.close();
+
+            // Populate table with default values
             for(int i = 0; i < MusicTable.SONG_COLUMN_NAMES.length; i++) {
                 query = "INSERT INTO " + COLUMN_CONFIG_TABLE +
-                        " (columnName, columnIndex, columnVisible)" +
-                        " VALUES (?, ?, ?)";
+                        " (columnName, columnVisible)" +
+                        " VALUES (?, ?)";
                 stmt = conn.prepareStatement(query);
                 String columnName = MusicTable.SONG_COLUMN_NAMES[i];
                 stmt.setString(1, columnName);
-                stmt.setInt(2, i);
                 if (columnName.equals("ID") || columnName.equals("File Path")) {
-                    stmt.setBoolean(3, false);
+                    stmt.setBoolean(2, false);  // default state for ID & File Path is !visible
                 } else {
-                    stmt.setBoolean(3, true);
+                    stmt.setBoolean(2, true);   // default state for all other columns is visible
                 }
                 stmt.execute();
                 stmt.close();
@@ -662,6 +662,7 @@ public class ShiBase {
             return true;
         } catch (SQLException sqlExcept) {
             // Table Exists
+            sqlExcept.printStackTrace();
         }
         return false;
     }
@@ -692,67 +693,20 @@ public class ShiBase {
     }
 
     /**
-     * Accessor method to get a columns view index
-     *
-     * @return columns view index
-     * @param columnName the column name to search for
-     */
-    public int getColumnIndex(String columnName) {
-        int columnIndex = -1;
-        try {
-            // Get all playlist names
-            String query = "SELECT columnIndex FROM " + COLUMN_CONFIG_TABLE +
-                    " WHERE columnName=?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, columnName);
-            ResultSet resultSet = stmt.executeQuery();
-            resultSet.next();
-            columnIndex = resultSet.getInt("columnIndex");
-            stmt.close();
-        }
-        catch (SQLException sqlExcept) {
-            sqlExcept.printStackTrace();
-        }
-        return columnIndex;
-    }
-
-    /**
      * Mutator method to set a columns visibility
      *
      * @return boolean indicating whether column is visible
-     * @param index the column name of the column being changed
+     * @param columnName the column name of the column being changed
      * @param visible the visible to set for the column
      */
-    public void setColumnVisible(int index, boolean visible) {
+    public void setColumnVisible(String columnName, boolean visible) {
         try {
             // Get all playlist names
             String query = "UPDATE " + COLUMN_CONFIG_TABLE +
                     " SET columnVisible=? " +
-                    " WHERE columnIndex=?";
-            stmt = conn.prepareStatement(query);
-            stmt.setBoolean(1, visible);
-            stmt.setInt(2, index);
-            stmt.execute();
-            stmt.close();
-        }
-        catch (SQLException sqlExcept) {
-            sqlExcept.printStackTrace();
-        }
-    }
-
-    /**
-     * Mutator method to set a column view index based on column name
-     *
-     * @param columnName column name to be changed
-     * @param index view index of column
-     */
-    public void setColumnIndex(String columnName, int index) {
-        try {
-            String query = "UPDATE " + COLUMN_CONFIG_TABLE +
-                    " SET columnIndex=? " +
                     " WHERE columnName=?";
             stmt = conn.prepareStatement(query);
-            stmt.setInt(1, index);
+            stmt.setBoolean(1, visible);
             stmt.setString(2, columnName);
             stmt.execute();
             stmt.close();
@@ -760,30 +714,5 @@ public class ShiBase {
         catch (SQLException sqlExcept) {
             sqlExcept.printStackTrace();
         }
-    }
-
-    /**
-     * Get array of column view indexes in order
-     *
-     * @return the column view indexes in order
-     */
-    public int[] getColumnOrder() {
-        int[] columns = new int[SONG_COLUMNS.length];
-        try {
-            // Get all playlist names
-            String query = "SELECT columnIndex FROM " + COLUMN_CONFIG_TABLE;
-            stmt = conn.prepareStatement(query);
-            ResultSet resultSet = stmt.executeQuery();
-            int i = 0;
-            while(resultSet.next()) {
-                columns[i] = resultSet.getInt("columnIndex");
-                i++;
-            }
-            stmt.close();
-        }
-        catch (SQLException sqlExcept) {
-            sqlExcept.printStackTrace();
-        }
-        return columns;
     }
 }

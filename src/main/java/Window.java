@@ -432,7 +432,7 @@ public class Window
     }
 
     /**
-     * Initializes a popup menu when a user right clicks library columns.
+     * Initializes a popup menu when a user right clicks table column header.
      * Shows checkboxes to allow user to select which columns to display.
      */
     private void createShowColumnsPopupMenu() {
@@ -443,17 +443,12 @@ public class Window
         final JCheckBoxMenuItem showGenre = new JCheckBoxMenuItem("Genre");
         final JCheckBoxMenuItem showComment = new JCheckBoxMenuItem("Comment");
 
-        // Get previous state of column display and update to reflect columns' state
+        // Set checkbox to reflect columns' visibility state (default is unselected)
         if (ShiTunes.db.getColumnVisible("Artist")) {showArtist.setSelected(true);}
-        else {musicTable.hide("Artist");}
         if (ShiTunes.db.getColumnVisible("Album")) {showAlbum.setSelected(true);}
-        else {musicTable.hide("Album");}
         if (ShiTunes.db.getColumnVisible("Year")) {showYear.setSelected(true);}
-        else {musicTable.hide("Year");}
         if (ShiTunes.db.getColumnVisible("Genre")) {showGenre.setSelected(true);}
-        else {musicTable.hide("Genre");}
         if (ShiTunes.db.getColumnVisible("Comment")) {showComment.setSelected(true);}
-        else {musicTable.hide("Comment");}
 
         showColumnsPopupMenu.add(showArtist);
         showColumnsPopupMenu.add(showAlbum);
