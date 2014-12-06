@@ -16,8 +16,8 @@ public class ShiBase {
     public static final String COLUMN_CONFIG_TABLE = "COLUMN_CONFIG";
 
 
-    private static final String[] SONG_COLUMNS =  {"songId", "artist", "title", "album", "yearReleased",
-            "genre", "filePath", "comment"};
+    private static final String[] SONG_COLUMNS =  {"songId", "filePath", "title", "artist", "album", "yearReleased",
+            "genre", "comment"};
     private static final String[] PLAYLIST_COLUMNS = {"playlistId", "playlistName"};
     private static final String[] PLAYLIST_SONG_COLUMNS = {"playlistId", "songId"};
     private static final String[] COLUMN_CONFIG_COLUMNS = {"columnName", "columnIndex", "columnVisible"};
@@ -152,8 +152,8 @@ public class ShiBase {
             String query = "CREATE TABLE " + SONG_TABLE +
                     " (songId INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)," +
                     "filePath VARCHAR(200) UNIQUE NOT NULL, " +
-                    "artist VARCHAR(100), " +
                     "title VARCHAR(150), " +
+                    "artist VARCHAR(100), " +
                     "album VARCHAR(150), " +
                     "yearReleased VARCHAR(4), " +
                     "genre VARCHAR(20), " +
@@ -185,12 +185,12 @@ public class ShiBase {
         if(!songExists(song.getFilePath())) {
             try {
                 String query = "INSERT INTO " + SONG_TABLE +
-                        " (filePath, artist, title, album, yearReleased, genre, comment)" +
+                        " (filePath, title, artist, album, yearReleased, genre, comment)" +
                         " VALUES (?, ?, ?, ?, ?, ?, ?)";
                 stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
                 stmt.setString(1, song.getFilePath());
-                stmt.setString(2, song.getArtist());
-                stmt.setString(3, song.getTitle());
+                stmt.setString(2, song.getTitle());
+                stmt.setString(3, song.getArtist());
                 stmt.setString(4, song.getAlbum());
                 stmt.setString(5, song.getYear());
                 stmt.setString(6, song.getGenre());
@@ -662,7 +662,6 @@ public class ShiBase {
             return true;
         } catch (SQLException sqlExcept) {
             // Table Exists
-            sqlExcept.printStackTrace();
         }
         return false;
     }

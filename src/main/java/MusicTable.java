@@ -10,18 +10,28 @@ import javax.swing.table.TableColumn;
  */
 public class MusicTable {
 
-    // To indicate MusicTable type
+    // Table types
     public static int LIBRARY = 0;
     public static int PLAYLIST = 1;
 
-    private int type;
+    // To indicate MusicTable type
     private JTable table;
+    private String name;   // the table name, "Library" or [playlist-name]
+    private int type;
 
     /**
      * The columns of the SONG table properly formatted for GUI
      */
-    public static final String[] SONG_COLUMN_NAMES =  {"ID", "Artist", "Title", "Album", "Year",
-                                                        "Genre", "File Path", "Comment"};
+    public static final String[] SONG_COLUMN_NAMES =  {"ID", "File Path", "Title", "Artist", "Album", "Year",
+                                                        "Genre", "Comment"};
+    public static final int COL_ID = 0;
+    public static final int COL_FILE_PATH = 1;
+    public static final int COL_TITLE = 2;
+    public static final int COL_ARTIST = 3;
+    public static final int COL_ALBUM = 4;
+    public static final int COL_YEAR = 5;
+    public static final int COL_GENRE = 6;
+    public static final int COL_COMMENT = 7;
 
     /**
      * Default constructor for MusicTable
@@ -32,7 +42,8 @@ public class MusicTable {
     public MusicTable(){
         table = new JTable();
         buildTable(ShiTunes.db.getAllSongs());
-        type = LIBRARY;  // Set table type
+        name = "Library";
+        type = LIBRARY;
     }
 
     /**
@@ -45,7 +56,8 @@ public class MusicTable {
     public MusicTable(String playlistName) {
         table = new JTable();
         buildTable(ShiTunes.db.getPlaylistSongs(playlistName));
-        type = PLAYLIST; // Set table type
+        name = playlistName;
+        type = PLAYLIST;
     }
 
     /**
@@ -126,16 +138,17 @@ public class MusicTable {
      * Updates the MusicTable model based on given model input
      * where model is either "Library" or "[playlist-name]"
      *
-     * @param model
+     * @param name the table name, either "Library" or [playlist-name]
      */
-    public void updateTableModel(String model) {
-        if (model.equals("Library")) {
+    public void updateTableModel(String name) {
+        this.name = name;
+        if (name.equals("Library")) {
             // update with library contents
             buildTable(ShiTunes.db.getAllSongs());
             type = LIBRARY;
         } else {
-            // update with playlist contents
-            buildTable(ShiTunes.db.getPlaylistSongs(model));
+            // update table with playlist songs (type == playlist name)
+            buildTable(ShiTunes.db.getPlaylistSongs(name));
             type = PLAYLIST;
         }
     }
@@ -158,8 +171,9 @@ public class MusicTable {
     public void addSongToTable(int id, Song song) {
         // Add row to JTable
         DefaultTableModel model = (DefaultTableModel) table.getModel();
-        model.addRow(new Object[]{String.valueOf(id), song.getArtist(), song.getTitle(), song.getAlbum(),
-                song.getYear(), song.getGenre(), song.getFilePath(), song.getComment()});
+        model.addRow(new Object[]{String.valueOf(id), song.getFilePath(), song.getTitle(), song.getArtist(), song.getAlbum(),
+                song.getYear(), song.getGenre(), song.getComment()});
+        updateTableModel(name);
     }
 
     /**
@@ -171,21 +185,4 @@ public class MusicTable {
         return type;
     }
 
-    /**
-     * Gets min index of the selected row range.
-     * If single row selected, this will double as the selected row getter.
-     *
-     */
-    public int getMinSelectedRow() {
-        return table.getSelectedRows()[0];
-    }
-
-    /**
-     * Gets max index of the selected row range.
-     *
-     */
-    public int getMaxSelectedRow() {
-        int maxIndex = table.getSelectedRows().length - 1;
-        return table.getSelectedRows()[maxIndex];
-    }
 }

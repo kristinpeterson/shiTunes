@@ -12,7 +12,7 @@ import java.io.File;
  */
 public class MusicPlayer {
 
-    private int loadedSongId;
+    private int loadedSongRow;   // Table row of loaded song
     private BasicPlayer player;
     private BasicController controller;
 
@@ -118,21 +118,21 @@ public class MusicPlayer {
     }
 
     /**
-     * Gets the currently loaded song id
+     * Gets the currently loaded song row
      *
-     * @return the currently loaded song's id
+     * @return the currently loaded song's row
      */
-    public int getLoadedSongId() {
-        return loadedSongId;
+    public int getLoadedSongRow() {
+        return loadedSongRow;
     }
 
     /**
      * Sets the currently loaded song using it's song id
      *
-     * @param id the song id of the song being loaded
+     * @param index the song id of the song being loaded
      */
-    public void setLoadedSongId(int id) {
-        this.loadedSongId = id;
+    public void setLoadedSongRow(int row) {
+        this.loadedSongRow = row;
     }
 
 }

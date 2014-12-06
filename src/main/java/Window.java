@@ -169,9 +169,10 @@ public class Window
         controlTablePanel.add(musicTableScrollPane);
         controlTablePanel.setMinimumSize(new Dimension(500, 600));
 
-        // Create menuBar and add File menu
+        // Create menuBar and add File/Control menus
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
+        menuBar.add(createControlsMenu());
 
         // Build the music table
         buildMusicTable();
@@ -394,6 +395,55 @@ public class Window
     }
 
     /**
+     * Creates shiTunes file menu
+     *
+     * @return the shiTunes file menu
+     */
+    private JMenu createControlsMenu() {
+        JMenu menu = new JMenu("Controls");
+        JMenuItem playItem = new JMenuItem("Play");
+        JMenuItem nextItem = new JMenuItem("Next");
+        JMenuItem previousItem = new JMenuItem("Previous");
+        JMenu playRecentSubMenu = new JMenu("Play Recent");
+        JMenuItem goToCurrentItem = new JMenuItem("Go To Current Song");
+        JMenuItem increaseVolumeItem = new JMenuItem("Increase Volume");
+        JMenuItem decreaseVolumeItem = new JMenuItem("Decrease Volume");
+        JCheckBoxMenuItem shuffleItem = new JCheckBoxMenuItem("Shuffle");
+        JCheckBoxMenuItem repeatItem = new JCheckBoxMenuItem("Repeat");
+
+        // Set accelerators
+        playItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
+        nextItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.ALT_MASK));
+        previousItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.ALT_MASK));
+        goToCurrentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.ALT_MASK));
+        increaseVolumeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.ALT_MASK));
+        decreaseVolumeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.ALT_MASK));
+
+        // Add action listeners
+        playItem.addActionListener(new PlayListener());
+        nextItem.addActionListener(new NextListener());
+        previousItem.addActionListener(new PreviousListener());
+        //goToCurrentItem.addActionListener();
+        //increaseVolumeItem.addActionListener();
+        //decreaseVolumeItem.addActionListener();
+        //shuffleItem.addActionListener();
+        //repeatItem.addActionListener();
+
+        menu.add(playItem);
+        menu.add(nextItem);
+        menu.add(previousItem);
+        menu.add(playRecentSubMenu);
+        menu.add(goToCurrentItem);
+        menu.addSeparator();
+        menu.add(increaseVolumeItem);
+        menu.add(decreaseVolumeItem);
+        menu.addSeparator();
+        menu.add(shuffleItem);
+        menu.add(repeatItem);
+        return menu;
+    }
+
+    /**
      * Initializes popup menu for the music table
      * <p>
      * When user right clicks anywhere on music table
@@ -565,10 +615,10 @@ public class Window
         public void mousePressed(MouseEvent me) {
             if (me.getClickCount() == 2) {
                 // set loaded song and play
-                int index = musicTable.getTable().getSelectedRow();
-                int songId = Integer.parseInt(musicTable.getTable().getValueAt(index, 0).toString());
-                player.setLoadedSongId(songId);
-                player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId()));
+                int row = musicTable.getTable().getSelectedRow();
+                int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
+                player.setLoadedSongRow(row);
+                player.play(ShiTunes.db.getSongFilePath(songId));
             }
         }
     }
@@ -843,25 +893,26 @@ public class Window
     }
 
     /**
-     * Add song to playlist listener.
+     * Add song(s) to playlist listener.
      * <p>
-     * Adds the selected song to the given playlist
+     * Adds the selected song(s) to the given playlist
      * Note: the playlist name must be passed as a parameter
      *
      */
     class AddSongToPlaylistListener implements ActionListener {
         private String playlist;
 
-        public AddSongToPlaylistListener(String s) {
-            playlist = s;
+        public AddSongToPlaylistListener(String playlistName) {
+            playlist = playlistName;
         }
 
         public void actionPerformed(ActionEvent event) {
-            int min = musicTable.getMinSelectedRow();
-            int max = musicTable.getMaxSelectedRow();
+            int[] selectedRows = musicTable.getTable().getSelectedRows();
 
-            for(int row = max; row >= min; row--) {
-                String selectedSong = musicTable.getTable().getValueAt(row, 5).toString();
+            for(int i = 0; i < selectedRows.length; i++) {
+                String selectedSong = musicTable.getTable().getValueAt(
+                        selectedRows[i], MusicTable.COL_FILE_PATH).toString();
+                System.out.println("Selected Song: " + selectedSong);
                 ShiTunes.db.addSongToPlaylist(selectedSong, playlist);
             }
             // Expand playlist node (index 1)
@@ -885,12 +936,13 @@ public class Window
          * @param e the ActionEvent object for this event
          */
         public void actionPerformed(ActionEvent e) {
-            int previousSongIndex = musicTable.getTable().getSelectedRow() - 1;
+            int previousSongRow = player.getLoadedSongRow() - 1;
+            System.out.println("previousSongIndex: " + previousSongRow);
 
             // Only skip to previous if the loaded song is not the first item in the table
             // and the loaded song is not set to -1 flag (which indicates that the
             // loaded song was opened via the File->Open menu)
-            if(previousSongIndex >= 0) {
+            if(previousSongRow >= 0) {
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
                     // if player is currently playing/resumed
@@ -898,10 +950,10 @@ public class Window
                     // decrement player.currentSongIndex
                     // play previous song
                     player.stop();
-                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(previousSongIndex, 0).toString());
-                    player.setLoadedSongId(songId);
-                    musicTable.getTable().setRowSelectionInterval(previousSongIndex, previousSongIndex);
-                    player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId()));
+                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(previousSongRow, MusicTable.COL_ID).toString());
+                    player.setLoadedSongRow(previousSongRow);
+                    musicTable.getTable().setRowSelectionInterval(previousSongRow, previousSongRow);
+                    player.play(ShiTunes.db.getSongFilePath(songId));
                 }
             }
         }
@@ -915,36 +967,41 @@ public class Window
      */
     class PlayListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
+            System.out.println("Play listener triggered");
+            int selectedRow = musicTable.getTable().getSelectedRow();
             // boolean indicator, true if selected song is currently loaded to player
             boolean selectedSongIsLoaded =
-                    musicTable.getTable().getSelectedRow() == player.getLoadedSongId();
+                     selectedRow == player.getLoadedSongRow();
+            int songId;
+            System.out.println("selectedSongIsLoaded: " + selectedSongIsLoaded);
             if (selectedSongIsLoaded && playerState == BasicPlayerEvent.PAUSED) {
                 // if selected song is current song on player
                 // and player.state == paused
+                System.out.println("player was paused -- resuming...");
                 player.resume();
             } else {
-                // Get the index of the selected row
-                int index = musicTable.getTable().getSelectedRow();
-                if(index == -1) {
+                if(selectedRow == -1) {
                     // if no row selected:
                     // set loaded song to first song in table
-                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(0, 0).toString());
+                    songId = Integer.parseInt(musicTable.getTable().getValueAt(0, MusicTable.COL_ID).toString());
                     musicTable.getTable().setRowSelectionInterval(0, 0);
-                    player.setLoadedSongId(songId);
+                    player.setLoadedSongRow(0);
                 } else {
-                    // selected song found:
-                    // set loaded song to selected song
-                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(index, 0).toString());
-                    musicTable.getTable().setRowSelectionInterval(index, index);
-                    player.setLoadedSongId(songId);
+                    System.out.println("Selected song found, setting loaded song to selected song");
+                    // selected song found
+                    songId = Integer.parseInt(musicTable.getTable().getValueAt(selectedRow, MusicTable.COL_ID).toString());
+                    musicTable.getTable().setRowSelectionInterval(selectedRow, selectedRow);
+                    player.setLoadedSongRow(selectedRow);
                 }
                 if (playerState == BasicPlayerEvent.PLAYING ||
                     playerState == BasicPlayerEvent.RESUMED ||
                     playerState == BasicPlayerEvent.PAUSED) {
+                    System.out.println("player was playing||resumed||paused -- stopping...");
                     // stop player
                     player.stop();
                 }
-                player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId()));
+                System.out.println("playing...");
+                player.play(ShiTunes.db.getSongFilePath(songId));
             }
         }
     }
@@ -989,7 +1046,8 @@ public class Window
      */
     class NextListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            int nextSongIndex = musicTable.getTable().getSelectedRow() + 1;
+            int nextSongIndex = player.getLoadedSongRow() + 1;
+            System.out.println("nextSongIndex: " + nextSongIndex);
             int lastItemInTable = musicTable.getTable().getRowCount() - 1;
 
             // Only skip to next if the loaded song is not the last item in the table
@@ -997,10 +1055,10 @@ public class Window
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
                     player.stop();  // stop currently playing song
-                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(nextSongIndex, 0).toString());
-                    player.setLoadedSongId(songId); // set player loaded song to next song
+                    int songId = Integer.parseInt(musicTable.getTable().getValueAt(nextSongIndex, MusicTable.COL_ID).toString());
+                    player.setLoadedSongRow(nextSongIndex); // set player loaded song to next song
                     musicTable.getTable().setRowSelectionInterval(nextSongIndex, nextSongIndex); // highlight next song
-                    player.play(ShiTunes.db.getSongFilePath(player.getLoadedSongId())); // play next song
+                    player.play(ShiTunes.db.getSongFilePath(songId)); // play next song
                 }
             }
         }
@@ -1116,10 +1174,7 @@ public class Window
      */
     class DeleteSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            // range[0] = min index of selected range
-            // range[1] = max index of selected range
-            int min = musicTable.getMinSelectedRow();
-            int max = musicTable.getMaxSelectedRow();
+            int[] selectedRows = musicTable.getTable().getSelectedRows();
 
             DefaultTableModel model = (DefaultTableModel) musicTable.getTable().getModel();
 
@@ -1127,19 +1182,18 @@ public class Window
             * Cycle through all selected songs and delete
             * one at a time
             *
-            * Note: starts at the bottom of the selected rows (ie. max index)
-            * and works it's way up the list of selected rows
-            *
             */
-            for(int row = max; row >= min; row--) {
-                int selectedSongId = Integer.parseInt(musicTable.getTable().getValueAt(row, 0).toString());
+            for(int i = 0; i < selectedRows.length; i++) {
+                int selectedSongRow = selectedRows[i];
+                int selectedSongId = Integer.parseInt(musicTable.getTable().getValueAt(
+                        selectedSongRow, MusicTable.COL_ID).toString());
 
                 // Stop player if song being deleted is the current song on the player
-                if(selectedSongId == player.getLoadedSongId()) {
+                if(selectedSongRow == player.getLoadedSongRow()) {
                     player.stop();
                 }
 
-                model.removeRow(row);
+                model.removeRow(selectedSongRow);
 
                 if(musicTable.getType() == MusicTable.LIBRARY) {
                     // Delete song from database by using filepath as an identifier
