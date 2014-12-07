@@ -59,6 +59,7 @@ public class Window
      */
     private int playerState;
     private int loadedSongBytes;
+    private boolean songCompleted;
     private int windowType;
     private JFrame windowFrame;
     private JScrollPane musicTableScrollPane;
@@ -74,6 +75,7 @@ public class Window
     private String selectedPlaylist;
     private MusicPlayer player;
     private JSlider volumeSlider;
+    private JMenu playRecentSubMenu;
 
     /**
      * The Window default constructor
@@ -406,12 +408,15 @@ public class Window
         JMenuItem playItem = new JMenuItem("Play");
         JMenuItem nextItem = new JMenuItem("Next");
         JMenuItem previousItem = new JMenuItem("Previous");
-        JMenu playRecentSubMenu = new JMenu("Play Recent");
+        playRecentSubMenu = new JMenu("Play Recent");
         JMenuItem goToCurrentItem = new JMenuItem("Go To Current Song");
         JMenuItem increaseVolumeItem = new JMenuItem("Increase Volume");
         JMenuItem decreaseVolumeItem = new JMenuItem("Decrease Volume");
         JCheckBoxMenuItem shuffleItem = new JCheckBoxMenuItem("Shuffle");
         JCheckBoxMenuItem repeatItem = new JCheckBoxMenuItem("Repeat");
+
+        // Build play recent menu
+        updateRecentSongsMenu();
 
         // Set accelerators
         playItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
@@ -443,6 +448,18 @@ public class Window
         menu.add(shuffleItem);
         menu.add(repeatItem);
         return menu;
+    }
+
+    private void updateRecentSongsMenu() {
+        // Clear menu entries
+        playRecentSubMenu.removeAll();
+
+        // Update with 10 most recent songs from db
+        int[] recentSongs = ShiTunes.db.getRecentSongs();
+        for(int i = 0; i < recentSongs.length; i++) {
+            JMenuItem recentSongItem = new JMenuItem(ShiTunes.db.getSongTitle(recentSongs[i]));
+            playRecentSubMenu.add(recentSongItem);
+        }
     }
 
     /**
@@ -621,6 +638,8 @@ public class Window
                 int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
                 player.setLoadedSongRow(row);
                 player.play(ShiTunes.db.getSongFilePath(songId));
+                ShiTunes.db.addRecentSong(songId);
+                updateRecentSongsMenu();
             }
         }
     }
@@ -954,6 +973,8 @@ public class Window
                     player.setLoadedSongRow(previousSongRow);
                     musicTable.getTable().setRowSelectionInterval(previousSongRow, previousSongRow);
                     player.play(ShiTunes.db.getSongFilePath(songId));
+                    ShiTunes.db.addRecentSong(songId);
+                    updateRecentSongsMenu();
                 }
             }
         }
@@ -997,6 +1018,8 @@ public class Window
                 }
 
                 player.play(ShiTunes.db.getSongFilePath(songId));
+                ShiTunes.db.addRecentSong(songId);
+                updateRecentSongsMenu();
             }
         }
     }
@@ -1053,6 +1076,8 @@ public class Window
                     player.setLoadedSongRow(nextSongIndex); // set player loaded song to next song
                     musicTable.getTable().setRowSelectionInterval(nextSongIndex, nextSongIndex); // highlight next song
                     player.play(ShiTunes.db.getSongFilePath(songId)); // play next song
+                    ShiTunes.db.addRecentSong(songId);
+                    updateRecentSongsMenu();
                 }
             }
         }
@@ -1284,6 +1309,7 @@ public class Window
         // Pay attention to properties. It's useful to get duration,
         // bitrate, channels, even tag such as ID3v2.
         // System.out.println("opened : "+properties.toString());
+        songCompleted = false;
         loadedSongBytes = Integer.parseInt(properties.get("audio.length.bytes").toString());
     }
 
@@ -1310,6 +1336,9 @@ public class Window
         *       but it isn't working properly, sound is funky for some reason, this is probably the wrong way to do this
         */
         if(bytesread == loadedSongBytes) {
+            songCompleted = true;
+        }
+        if(songCompleted && playerState == BasicPlayerEvent.STOPPED) {
             NextListener nextListener = new NextListener();
             nextListener.actionPerformed(null);
         }

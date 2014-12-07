@@ -14,6 +14,7 @@ public class ShiBase {
     public static final String PLAYLIST_TABLE = "PLAYLIST";
     public static final String PLAYLIST_SONG_TABLE = "PLAYLIST_SONG";
     public static final String COLUMN_CONFIG_TABLE = "COLUMN_CONFIG";
+    public static final String RECENT_SONGS_TABLE = "RECENT_SONGS";
 
 
     private static final String[] SONG_COLUMNS =  {"songId", "filePath", "title", "artist", "album", "yearReleased",
@@ -21,6 +22,7 @@ public class ShiBase {
     private static final String[] PLAYLIST_COLUMNS = {"playlistId", "playlistName"};
     private static final String[] PLAYLIST_SONG_COLUMNS = {"playlistId", "songId"};
     private static final String[] COLUMN_CONFIG_COLUMNS = {"columnName", "columnIndex", "columnVisible"};
+    private static final String[] RECENT_SONGS_COLUMNS = {"songId"};
     private static final String CREATE = ";create=true";
     private static final String PROTOCOL = "jdbc:derby:";
     private Connection conn;
@@ -89,6 +91,7 @@ public class ShiBase {
         createPlaylistTable();
         createPlaylistSongTable();
         createColumnConfigTable();
+        createRecentSongTable();
     }
 
     /**
@@ -330,7 +333,6 @@ public class ShiBase {
      *
      * @param songId the song id of the song being searched for
      * @return the unique file path of the song being searched for
-     *         returns  if not found
      */
     public String getSongFilePath(int songId) {
         String songFilePath = null;
@@ -347,6 +349,31 @@ public class ShiBase {
             sqlExcept.printStackTrace();
         }
         return songFilePath;
+    }
+
+
+    /**
+     * Get the song title of a song based on its
+     * song id
+     *
+     * @param songId the song id of the song being searched for
+     * @return the song title of the song being searched for
+     */
+    public String getSongTitle(int songId) {
+        String title = null;
+        try {
+            String query = "SELECT title FROM " + SONG_TABLE + " WHERE songId=?";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, songId);
+            ResultSet songIdRS = stmt.executeQuery();
+            if(songIdRS.next()) {
+                title = songIdRS.getString("title");
+            }
+            stmt.close();
+        } catch (SQLException sqlExcept) {
+            sqlExcept.printStackTrace();
+        }
+        return title;
     }
 
     /*
@@ -713,5 +740,99 @@ public class ShiBase {
         catch (SQLException sqlExcept) {
             sqlExcept.printStackTrace();
         }
+    }
+
+    /* ******************** */
+    /* ******************** */
+    /* RECENT SONG  METHODS */
+    /* ******************** */
+    /* ******************** */
+
+    /*
+     * Creates RECENT_SONGS table, if it doesn't already exist
+     *
+     * @return true if table was created successfully
+     */
+    private boolean createRecentSongTable() {
+        try {
+            String query = "CREATE TABLE " + RECENT_SONGS_TABLE +
+                    " (songId INTEGER)";
+            stmt = conn.prepareStatement(query);
+            stmt.execute();
+            stmt.close();
+            return true;
+        } catch (SQLException sqlExcept) {
+            // Table Exists
+        }
+        return false;
+    }
+
+    /**
+     * Adds the given song to recent songs
+     *
+     * @param songId the song to add to recent songs
+     * @return true if song successfully added to recent songs
+     */
+    public boolean addRecentSong(int songId) {
+        try {
+            // Insert given song into recent songs table
+            String query = "INSERT INTO " + RECENT_SONGS_TABLE +
+                    " (songId) " +
+                    " VALUES (?)";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, songId);
+            stmt.execute();
+            stmt.close();
+
+            // Get row count after insert
+            query = "SELECT count(*) as rowCount FROM " + RECENT_SONGS_TABLE;
+            stmt = conn.prepareStatement(query);
+            ResultSet countRS = stmt.executeQuery();
+            int rowCount = 0;
+            while(countRS.next()) {
+                rowCount = countRS.getInt("rowCount");
+            }
+            stmt.close();
+
+            // If rowCount > 10 (ie. 11) delete the oldest song in recent songs table
+            if(rowCount > 10) {
+                query = "DELETE FROM " + RECENT_SONGS_TABLE +
+                        " WHERE songId IN (SELECT songId FROM " + RECENT_SONGS_TABLE +
+                        " FETCH FIRST ROW ONLY)";
+                stmt = conn.prepareStatement(query);
+                stmt.executeUpdate();
+                stmt.close();
+            }
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Get all recent song ids
+     *
+     * @return array of recent song ids
+     */
+    public int[] getRecentSongs() {
+        ArrayList<Integer> recentSongsList = new ArrayList<Integer>();
+        try {
+            // Get all recent song ids
+            String query = "SELECT songId FROM " + RECENT_SONGS_TABLE;
+            stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+            while(rs.next()) {
+                recentSongsList.add(rs.getInt("songId"));
+            }
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        int[] recentSongs = new int[recentSongsList.size()];
+        for(int i = 0; i < recentSongs.length; i++) {
+            recentSongs[i] = recentSongsList.get(i);
+        }
+        return recentSongs;
     }
 }
