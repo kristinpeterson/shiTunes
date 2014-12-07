@@ -1163,8 +1163,7 @@ public class Window
             }
             JViewport viewport = (JViewport)musicTable.getTable().getParent();
 
-            // This rectangle is relative to the table where the
-            // northwest corner of cell (0,0) is always (0,0).
+            // Get cell rectangle for loaded song row
             Rectangle rect = musicTable.getTable().getCellRect(player.getLoadedSongRow(), 0, true);
 
             // The location of the viewport relative to the table
@@ -1176,9 +1175,6 @@ public class Window
             rect.setLocation(rect.x-pt.x, rect.y-pt.y);
 
             musicTable.getTable().scrollRectToVisible(rect);
-
-            // Scroll the area into view
-            //viewport.scrollRectToVisible(rect);
         }
     }
 
