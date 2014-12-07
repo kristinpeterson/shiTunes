@@ -178,7 +178,7 @@ public class Window
         // Create menuBar and add File/Control menus
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(getFileMenu());
-        menuBar.add(getFileMenu());
+        menuBar.add(getControlsMenu());
 
         // Build the music table
         buildMusicTable();
@@ -456,7 +456,7 @@ public class Window
         // Clear menu entries
         playRecentSubMenu.removeAll();
 
-        // Update with 10 most recent songs from db
+        // Repopulate with 10 most recent songs from db
         int[] recentSongs = ShiTunes.db.getRecentSongs();
         for(int i = 0; i < recentSongs.length; i++) {
             JMenuItem recentSongItem = new JMenuItem(ShiTunes.db.getSongTitle(recentSongs[i]));
