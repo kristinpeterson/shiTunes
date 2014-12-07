@@ -26,7 +26,11 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * The GUI class builds the shiTunes Graphical User Interface
+ * The Window class builds the shiTunes Graphical User Interface
+ * and can be instantiated as either a full application window
+ * by calling the default constructor, or as a playlist only window
+ * which does not include the playlist navigation panel by calling
+ * the overloaded constructor Window(playlistName)
  *
  * @author shiTunes inc.
  */
