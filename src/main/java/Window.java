@@ -38,10 +38,6 @@ public class Window
        extends JFrame
        implements BasicPlayerListener {
 
-    // Window types
-    public static int MAIN = 0;
-    public static int PLAYLIST = 1;
-
     /*
      * Indicates the player state
      * <p>
@@ -65,6 +61,8 @@ public class Window
     private int loadedSongBytes;
     private boolean songCompleted;
     private int windowType;
+    private static int MAIN = 0;
+    private static int PLAYLIST = 1;
     private JFrame windowFrame;
     private JScrollPane musicTableScrollPane;
     private MusicTable musicTable;
@@ -179,8 +177,8 @@ public class Window
 
         // Create menuBar and add File/Control menus
         JMenuBar menuBar = new JMenuBar();
-        menuBar.add(createFileMenu());
-        menuBar.add(createControlsMenu());
+        menuBar.add(getFileMenu());
+        menuBar.add(getFileMenu());
 
         // Build the music table
         buildMusicTable();
@@ -378,7 +376,7 @@ public class Window
      *
      * @return the shiTunes file menu
      */
-    private JMenu createFileMenu() {
+    private JMenu getFileMenu() {
         JMenu menu = new JMenu("File");
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem addItem = new JMenuItem("Add Song");
@@ -407,7 +405,7 @@ public class Window
      *
      * @return the shiTunes file menu
      */
-    private JMenu createControlsMenu() {
+    private JMenu getControlsMenu() {
         JMenu menu = new JMenu("Controls");
         JMenuItem playItem = new JMenuItem("Play");
         JMenuItem nextItem = new JMenuItem("Next");
