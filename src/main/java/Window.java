@@ -430,7 +430,7 @@ public class Window
         playItem.addActionListener(new PlayListener());
         nextItem.addActionListener(new NextListener());
         previousItem.addActionListener(new PreviousListener());
-        //goToCurrentItem.addActionListener();
+        goToCurrentItem.addActionListener(new GoToCurrentListener());
         increaseVolumeItem.addActionListener(new VolumeIncreaseListener());
         decreaseVolumeItem.addActionListener(new VolumeDecreaseListener());
         //shuffleItem.addActionListener();
@@ -1104,6 +1104,10 @@ public class Window
         }
     }
 
+    /* ********************** */
+    /* Control Menu Listeners */
+    /* ********************** */
+
     /**
      * Volume increment listener:
      * <p>
@@ -1148,9 +1152,39 @@ public class Window
         }
     }
 
-    /* ********************* */
-    /* Main Menu Listeners */
-    /* ********************* */
+    /**
+     * Scroll to currently loaded song row listener
+     *
+     */
+    class GoToCurrentListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if (!(musicTable.getTable().getParent() instanceof JViewport)) {
+                return;
+            }
+            JViewport viewport = (JViewport)musicTable.getTable().getParent();
+
+            // This rectangle is relative to the table where the
+            // northwest corner of cell (0,0) is always (0,0).
+            Rectangle rect = musicTable.getTable().getCellRect(player.getLoadedSongRow(), 0, true);
+
+            // The location of the viewport relative to the table
+            Point pt = viewport.getViewPosition();
+
+            // Translate the cell location so that it is relative
+            // to the view, assuming the northwest corner of the
+            // view is (0,0)
+            rect.setLocation(rect.x-pt.x, rect.y-pt.y);
+
+            musicTable.getTable().scrollRectToVisible(rect);
+
+            // Scroll the area into view
+            //viewport.scrollRectToVisible(rect);
+        }
+    }
+
+    /* ******************* */
+    /* File Menu Listeners */
+    /* ******************* */
 
     /**
      * Open Item listener:
