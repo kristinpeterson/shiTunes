@@ -15,6 +15,7 @@ public class MusicPlayer {
     private int loadedSongRow;   // Table row of loaded song
     private BasicPlayer player;
     private BasicController controller;
+    private double volume;
 
     /**
      * MusicPlayer default constructor, instantiates the persistent BasicPlayer object
@@ -23,16 +24,24 @@ public class MusicPlayer {
     public MusicPlayer() {
         player = new BasicPlayer();
         controller = (BasicController) player;
+        volume = -1.0;    // indicates that gain has yet to be initialized
     }
 
     /**
-     * Gets the current volume level of the player/system
+     * Gets the current volume level of the player/system converted to Volume Slider value
      *
      * @return the current volume level as an int value in range [0, 100]
      */
-    public int getVolume() {
-        return (int)(player.getGainValue() * 100);
+    public int getSliderVolume() {
+        return (int)(this.volume * 100);
     }
+
+    /**
+     * Returns the current volume in range [0.0, 1.0]
+     *
+     * @return the current volume
+     */
+    public double getVolume() { return volume; };
 
     public BasicPlayer getPlayer() {
         return player;
@@ -48,7 +57,8 @@ public class MusicPlayer {
      */
     public void adjustVolume(double volume) {
         try {
-            player.setGain(volume);
+            controller.setGain(volume);
+            this.volume = volume;
         } catch (BasicPlayerException e) {
             e.printStackTrace();
         }
@@ -65,6 +75,11 @@ public class MusicPlayer {
             controller.open(new File(filePath));
             // play loaded song
             controller.play();
+            // setGain to default .5 value
+            if(this.volume == -1.0) {
+                controller.setGain(0.5);
+                this.volume = 0.5;
+            }
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -129,7 +144,7 @@ public class MusicPlayer {
     /**
      * Sets the currently loaded song using it's song id
      *
-     * @param index the song id of the song being loaded
+     * @param row the song id of the song being loaded
      */
     public void setLoadedSongRow(int row) {
         this.loadedSongRow = row;

@@ -20,7 +20,8 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -72,6 +73,7 @@ public class Window
     private DefaultMutableTreeNode playlistNode;
     private String selectedPlaylist;
     private MusicPlayer player;
+    private JSlider volumeSlider;
 
     /**
      * The Window default constructor
@@ -327,12 +329,12 @@ public class Window
             JButton nextButton = new JButton(nextIcon);
 
             // Initialize Volume Slider
-            JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
-            slider.setMinorTickSpacing(10);
-            slider.setMajorTickSpacing(20);
-            slider.setPaintTicks(false);
-            slider.setPaintLabels(false);
-            slider.setLabelTable(slider.createStandardLabels(10));
+            volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+            volumeSlider.setMinorTickSpacing(10);
+            volumeSlider.setMajorTickSpacing(20);
+            volumeSlider.setPaintTicks(false);
+            volumeSlider.setPaintLabels(false);
+            volumeSlider.setLabelTable(volumeSlider.createStandardLabels(10));
 
             // Set preferred button size
             playButton.setPreferredSize(new Dimension(40, 40));
@@ -347,7 +349,7 @@ public class Window
             stopButton.addActionListener(new StopListener());
             previousButton.addActionListener(new PreviousListener());
             nextButton.addActionListener(new NextListener());
-            slider.addChangeListener(new VolumeListener());
+            volumeSlider.addChangeListener(new VolumeSliderListener());
 
             // Add buttons to controlPanel
             controlPanel.add(previousButton);
@@ -355,7 +357,7 @@ public class Window
             controlPanel.add(pauseButton);
             controlPanel.add(stopButton);
             controlPanel.add(nextButton);
-            controlPanel.add(slider);
+            controlPanel.add(volumeSlider);
 
             controlPanel.setMaximumSize(new Dimension(1080, 40));
         } catch (IOException e) {
@@ -413,19 +415,19 @@ public class Window
 
         // Set accelerators
         playItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
-        nextItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.ALT_MASK));
-        previousItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.ALT_MASK));
-        goToCurrentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.ALT_MASK));
-        increaseVolumeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.ALT_MASK));
-        decreaseVolumeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.ALT_MASK));
+        nextItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.META_MASK));
+        previousItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.META_MASK));
+        goToCurrentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.META_MASK));
+        increaseVolumeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.META_MASK));
+        decreaseVolumeItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.META_MASK));
 
         // Add action listeners
         playItem.addActionListener(new PlayListener());
         nextItem.addActionListener(new NextListener());
         previousItem.addActionListener(new PreviousListener());
         //goToCurrentItem.addActionListener();
-        //increaseVolumeItem.addActionListener();
-        //decreaseVolumeItem.addActionListener();
+        increaseVolumeItem.addActionListener(new VolumeIncreaseListener());
+        decreaseVolumeItem.addActionListener(new VolumeDecreaseListener());
         //shuffleItem.addActionListener();
         //repeatItem.addActionListener();
 
@@ -912,7 +914,6 @@ public class Window
             for(int i = 0; i < selectedRows.length; i++) {
                 String selectedSong = musicTable.getTable().getValueAt(
                         selectedRows[i], MusicTable.COL_FILE_PATH).toString();
-                System.out.println("Selected Song: " + selectedSong);
                 ShiTunes.db.addSongToPlaylist(selectedSong, playlist);
             }
             // Expand playlist node (index 1)
@@ -920,9 +921,9 @@ public class Window
         }
     }
 
-    /* *********************** */
-    /* Control Panel Listeners */
-    /* *********************** */
+    /* ***************** */
+    /* Control Listeners */
+    /* ***************** */
 
     /**
      * A listener for the Previous Song action
@@ -937,7 +938,6 @@ public class Window
          */
         public void actionPerformed(ActionEvent e) {
             int previousSongRow = player.getLoadedSongRow() - 1;
-            System.out.println("previousSongIndex: " + previousSongRow);
 
             // Only skip to previous if the loaded song is not the first item in the table
             // and the loaded song is not set to -1 flag (which indicates that the
@@ -967,17 +967,14 @@ public class Window
      */
     class PlayListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            System.out.println("Play listener triggered");
             int selectedRow = musicTable.getTable().getSelectedRow();
             // boolean indicator, true if selected song is currently loaded to player
             boolean selectedSongIsLoaded =
                      selectedRow == player.getLoadedSongRow();
             int songId;
-            System.out.println("selectedSongIsLoaded: " + selectedSongIsLoaded);
             if (selectedSongIsLoaded && playerState == BasicPlayerEvent.PAUSED) {
                 // if selected song is current song on player
                 // and player.state == paused
-                System.out.println("player was paused -- resuming...");
                 player.resume();
             } else {
                 if(selectedRow == -1) {
@@ -987,7 +984,6 @@ public class Window
                     musicTable.getTable().setRowSelectionInterval(0, 0);
                     player.setLoadedSongRow(0);
                 } else {
-                    System.out.println("Selected song found, setting loaded song to selected song");
                     // selected song found
                     songId = Integer.parseInt(musicTable.getTable().getValueAt(selectedRow, MusicTable.COL_ID).toString());
                     musicTable.getTable().setRowSelectionInterval(selectedRow, selectedRow);
@@ -996,11 +992,10 @@ public class Window
                 if (playerState == BasicPlayerEvent.PLAYING ||
                     playerState == BasicPlayerEvent.RESUMED ||
                     playerState == BasicPlayerEvent.PAUSED) {
-                    System.out.println("player was playing||resumed||paused -- stopping...");
                     // stop player
                     player.stop();
                 }
-                System.out.println("playing...");
+
                 player.play(ShiTunes.db.getSongFilePath(songId));
             }
         }
@@ -1047,7 +1042,6 @@ public class Window
     class NextListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             int nextSongIndex = player.getLoadedSongRow() + 1;
-            System.out.println("nextSongIndex: " + nextSongIndex);
             int lastItemInTable = musicTable.getTable().getRowCount() - 1;
 
             // Only skip to next if the loaded song is not the last item in the table
@@ -1065,22 +1059,67 @@ public class Window
     }
 
     /**
-     * Volume listener:
+     * Volume slider listener:
      * <p>
      * Takes value from volume slider
      * and converts to double in range [0.0, 1.0] to
      * set basic player gain (volume) to a value it understands.
      *
      */
-    class VolumeListener implements ChangeListener {
+    class VolumeSliderListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
             JSlider source = (JSlider)e.getSource();
             if (!source.getValueIsAdjusting()) {
-                // volume converted to double value in range [0.0, 1.0]
+                // slider value in range [0, 100]
+                // converted to double value in range [0.0, 1.0]
                 // which is the range required by BasicPlayer setGain() method
                 double volume = source.getValue() / 100.00;
                 player.adjustVolume(volume);
             }
+        }
+    }
+
+    /**
+     * Volume increment listener:
+     * <p>
+     * Increases volume by 5%
+     *
+     */
+    class VolumeIncreaseListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            double volume = player.getVolume();
+            if(volume < .95) {
+                // Increase by .05 (which is 5% of total gain value)
+                player.adjustVolume(volume + .05);
+            } else {
+                // if volume > .95, increase volume to 100
+                // (otherwise [volume + .05] in if statement would have increased gain above 1.0)
+                player.adjustVolume(1.0);
+            }
+            // Adjust volume slider
+            volumeSlider.setValue(player.getSliderVolume());
+        }
+    }
+
+    /**
+     * Volume decrement listener:
+     * <p>
+     * Decreases volume by 5%
+     *
+     */
+    class VolumeDecreaseListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            double volume = player.getVolume();
+            if(volume > 0.05) {
+                // Decrease by .05 (which is 5% of total gain value)
+                player.adjustVolume(volume - .05);
+            } else {
+                // if volume < .05, reduce volume to zero
+                // (otherwise [volume - .05] in if statement would have reduced gain below zero)
+                player.adjustVolume(0);
+            }
+            // Adjust volume slider
+            volumeSlider.setValue(player.getSliderVolume());
         }
     }
 
