@@ -4,7 +4,7 @@ import javax.swing.table.TableColumn;
 
 /**
  * The MusicTable class contains methods related
- * to MusicTable creation and selected song tracking
+ * to MusicTable creation and management
  *
  * @author shiTunes inc.
  */
