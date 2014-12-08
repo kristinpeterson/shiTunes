@@ -60,8 +60,6 @@ public class Window
      *
      */
     private int playerState;
-    private int loadedSongBytes;
-    private boolean songCompleted;
     private int windowType;
     private static int MAIN = 0;
     private static int PLAYLIST = 1;
@@ -86,6 +84,7 @@ public class Window
     private long timeRemaining;
     private long timeElapsed;
     private int duration;
+    private boolean songCompleted;
 
 
     /**
@@ -539,56 +538,36 @@ public class Window
 
         ActionListener artistCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                if (showArtist.isSelected()) {
-                    musicTable.show("Artist");
-                }
-                else {
-                    musicTable.hide("Artist");
-                }
+                if (showArtist.isSelected()) { musicTable.show("Artist"); }
+                else {musicTable.hide("Artist");}
             }
         };
 
         ActionListener albumCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                if (showAlbum.isSelected()) {
-                    musicTable.show("Album");
-                }
-                else {
-                    musicTable.hide("Album");
-                }
+                if (showAlbum.isSelected()) { musicTable.show("Album"); }
+                else { musicTable.hide("Album"); }
             }
         };
 
         ActionListener yearCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                if (showYear.isSelected()) {
-                    musicTable.show("Year");
-                }
-                else {
-                    musicTable.hide("Year");
-                }
+                if (showYear.isSelected()) { musicTable.show("Year"); }
+                else { musicTable.hide("Year"); }
             }
         };
 
         ActionListener genreCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                if (showGenre.isSelected()) {
-                    musicTable.show("Genre");
-                }
-                else {
-                    musicTable.hide("Genre");
-                }
+                if (showGenre.isSelected()) { musicTable.show("Genre"); }
+                else { musicTable.hide("Genre"); }
             }
         };
 
         ActionListener commentCheckboxListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                if (showComment.isSelected()) {
-                    musicTable.show("Comment");
-                }
-                else {
-                    musicTable.hide("Comment");
-                }
+                if (showComment.isSelected()) { musicTable.show("Comment"); }
+                else { musicTable.hide("Comment"); }
             }
         };
 
@@ -648,6 +627,8 @@ public class Window
         progressBar.setStringPainted(true);
         progressBar.setString("");
 
+        UIManager.put("ProgressBar.background", Color.ORANGE);
+
         //timer is used for the timer. Similar to threads, it runs in the background: actions happen based on time
         progressBarPanel.add(leftTimer);
         progressBarPanel.add(progressBar);
@@ -657,7 +638,7 @@ public class Window
     }
 
     //changes the jlabels timers for the progress bar
-    private void updateDisplayTimer()
+    private void updateProgress()
     {
         //used to format timer number
         NumberFormat format;
@@ -679,6 +660,10 @@ public class Window
         rightTimer.setText(format.format(rightHours) +":" + format.format(rightMinutes) + ":" + format.format(rightSeconds));
         leftTimer.setText(format.format(leftHours) +":" + format.format(leftMinutes) + ":" + format.format(leftSeconds));
 
+        if(duration > 0) {
+            // set progress bar value based on percentage of timeElapsed
+            progressBar.setValue((int) ( ( (float) timeElapsed / duration) * 100));
+        }
     }
 
     //used when changing songs
@@ -686,7 +671,7 @@ public class Window
     {
         timeRemaining = 0;
         timeElapsed = 0;
-        updateDisplayTimer();
+        updateProgress();
         rightTimer.setText("00:00:00");
         leftTimer.setText("00:00:00");
         progressBar.setValue(0);
@@ -1390,7 +1375,6 @@ public class Window
         // Pay attention to properties. It's useful to get duration,
         // bitrate, channels, even tag such as ID3v2.
         // System.out.println("opened : "+properties.toString());
-        songCompleted = false;
 
         // Print properties map:
         //Iterator it = properties.entrySet().iterator();
@@ -1423,12 +1407,11 @@ public class Window
 
         timeElapsed = microseconds/1000;
         timeRemaining = duration - timeElapsed;
-        updateDisplayTimer();
+        updateProgress();
 
-        if(timeRemaining == 0) {
+        // if time remaining less than 1 second, set songCompleted flag to true
+        if(timeRemaining < 1000) {
             songCompleted = true;
-            NextListener nextListener = new NextListener();
-            nextListener.actionPerformed(null);
         }
     }
 
@@ -1448,6 +1431,12 @@ public class Window
             playerState = event.getCode();
         } else {
             // do nothing, retain previous state
+        }
+
+        if(playerState == BasicPlayerEvent.STOPPED && songCompleted) {
+            NextListener nextListener = new NextListener();
+            nextListener.actionPerformed(null);
+            songCompleted = false;
         }
     }
 
@@ -1539,8 +1528,8 @@ public class Window
      * @param row
      */
     private void playSong(int row) {
-        int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
         clearProgressBar();
+        int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
         player.setLoadedSongRow(row);
         musicTable.getTable().setRowSelectionInterval(row, row);
         player.play(ShiTunes.db.getSongFilePath(songId));
