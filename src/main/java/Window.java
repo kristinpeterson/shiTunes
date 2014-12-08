@@ -20,8 +20,6 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -87,8 +85,6 @@ public class Window
     private JLabel rightTimer;
     private long timeRemaining;
     private long timeElapsed;
-    private Progress task = new Progress();
-    private Boolean songChanged;
     private int duration;
 
 
@@ -660,7 +656,6 @@ public class Window
         return progressBarPanel;
     }
 
-    //gets called every .1 seconds to update the timer.
     //changes the jlabels timers for the progress bar
     private void updateDisplayTimer()
     {
@@ -686,49 +681,12 @@ public class Window
 
     }
 
-    //this class is necessary to tick the progress bar from 0 to complete
-    class Progress extends SwingWorker<Void, Void> {
-        public Void doInBackground(){   //runs in background similar to multithreading
-            setProgress(0);             //start progress bar at 0
-            songChanged = false;
-            //loop while song is playing. stop when song finished or someone changes the song.
-            while (timeElapsed <= duration && !songChanged) {
-                try {
-                    Thread.sleep(1000);//sleep for a second
-                } catch (InterruptedException e) {
-                }
-
-                int updatedProgress = (int) (((double)timeElapsed/(double)duration)*100.0);
-
-                setProgress(Math.min(updatedProgress, 100));
-            }
-            songChanged=false;
-        return null;
-        }
-        public void done()//do this when progress bar reaches the end.
-        {
-            progressBar.setValue(0);
-        }
-    }
-
-    //adds listener to the play button
-    class ProgressBarListener implements PropertyChangeListener {
-        //do this when progress changes in doInBackgroundMethod
-        public void propertyChange (PropertyChangeEvent evt)
-        {
-           //int progress = (Integer) evt.getNewValue();
-            int progress = task.getProgress();
-            progressBar.setValue(progress);
-        }
-    }
-
     //used when changing songs
     private void clearProgressBar()
     {
         timeRemaining = 0;
         timeElapsed = 0;
         updateDisplayTimer();
-        songChanged = true;
         rightTimer.setText("00:00:00");
         leftTimer.setText("00:00:00");
         progressBar.setValue(0);
@@ -1463,21 +1421,15 @@ public class Window
         // MP3SPI provides mp3.equalizer.
         // System.out.println("progress : "+properties.toString());
 
-        /*
-        * TODO: This is an attempt to skip to next song immediately after current song ends
-        *       but it isn't working properly, sound is funky for some reason, this is probably the wrong way to do this
-        */
-        if(bytesread == loadedSongBytes) {
-            songCompleted = true;
-        }
-        if(songCompleted && playerState == BasicPlayerEvent.STOPPED) {
-            NextListener nextListener = new NextListener();
-            nextListener.actionPerformed(null);
-        }
-
         timeElapsed = microseconds/1000;
         timeRemaining = duration - timeElapsed;
         updateDisplayTimer();
+
+        if(timeRemaining == 0) {
+            songCompleted = true;
+            NextListener nextListener = new NextListener();
+            nextListener.actionPerformed(null);
+        }
     }
 
     /**
@@ -1589,12 +1541,8 @@ public class Window
     private void playSong(int row) {
         int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
         clearProgressBar();
-        songChanged=false;
         player.setLoadedSongRow(row);
         musicTable.getTable().setRowSelectionInterval(row, row);
-        task = new Progress();
-        task.addPropertyChangeListener(new ProgressBarListener());
-        task.execute();
         player.play(ShiTunes.db.getSongFilePath(songId));
         ShiTunes.db.addRecentSong(songId);
         updateRecentSongsMenu();
