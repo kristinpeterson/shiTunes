@@ -1,8 +1,13 @@
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayerEvent;
 import javazoom.jlgui.basicplayer.BasicPlayerListener;
+import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
+import org.tritonus.share.sampled.file.TAudioFileFormat;
 
 import javax.imageio.ImageIO;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -22,8 +27,10 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Map;
+import java.text.NumberFormat;
+import java.util.*;
+import java.beans.*;
+
 
 /**
  * The Window class builds the shiTunes Graphical User Interface
@@ -78,6 +85,17 @@ public class Window
     private MusicPlayer player;
     private JSlider volumeSlider;
     private JMenu playRecentSubMenu;
+    private JProgressBar progressBar;
+    private JLabel leftTimer;
+    private JLabel rightTimer;
+    private long timeUpdate; //time used to calculate time for progress bar
+    private long remainingTime; //song length in millis
+    private long timeElapsed=0;
+    private long songLength;
+    javax.swing.Timer timer;
+    Progress task = new Progress();
+    private Boolean songChanged;
+
 
     /**
      * The Window default constructor
@@ -174,6 +192,8 @@ public class Window
         controlTablePanel.add(getControlPanel());
         controlTablePanel.add(musicTableScrollPane);
         controlTablePanel.setMinimumSize(new Dimension(500, 600));
+        JPanel progressBarPanel = createProgressBar();
+        controlTablePanel.add(progressBarPanel);
 
         // Create menuBar and add File/Control menus
         JMenuBar menuBar = new JMenuBar();
@@ -349,8 +369,10 @@ public class Window
 
             // Set action listeners
             playButton.addActionListener(new PlayListener());
+            playButton.addActionListener(new ProgressBarListener());
             pauseButton.addActionListener(new PauseListener());
             stopButton.addActionListener(new StopListener());
+            stopButton.addActionListener(new ProgressBarStopListener());
             previousButton.addActionListener(new PreviousListener());
             nextButton.addActionListener(new NextListener());
             volumeSlider.addChangeListener(new VolumeSliderListener());
@@ -623,6 +645,134 @@ public class Window
 
     }
 
+    ///////////////////////
+    //ProgressBar Methods//
+    ///////////////////////
+
+    //Creates a JPanel for the progress bar and the two timers
+    private JPanel createProgressBar()
+    {
+        JPanel progressBarPanel = new JPanel();
+        leftTimer = new JLabel ("00:00:00");
+        rightTimer = new JLabel ("00:00:00");
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setValue(0);
+        progressBar.setStringPainted(true);
+        progressBar.setString("");
+
+        //timer is used for the timer. Similar to threads, it runs in the background: actions happen based on time
+        timer = new javax.swing.Timer(1000, new TimerActionListener());
+        progressBarPanel.add(leftTimer);
+        progressBarPanel.add(progressBar);
+        progressBarPanel.add(rightTimer);
+        return progressBarPanel;
+
+    }
+
+    //gets called every .1 seconds to update the timer.
+    //changes the jlabels timers for the progress bar
+    private void updateDisplayTimer()
+    {
+        //used to format timer number
+        NumberFormat format;
+        format = NumberFormat.getNumberInstance();
+        format.setMinimumIntegerDigits(2); //pad with 0 if necessary
+        if (remainingTime == 0)     //first time playing a song, remainingTime = songLength
+            remainingTime = songLength;
+        //current time in milliseconds
+        long currentTime = System.currentTimeMillis();
+        timeElapsed = timeElapsed + currentTime - timeUpdate; //needed for left timer
+        long timeOut = currentTime - timeUpdate;//computation
+        remainingTime = remainingTime - timeOut;    //time remaining for right timer
+        timeUpdate = currentTime;
+
+        //convert milliseconds to HH:MM:SS format and display
+        if (remainingTime <0)
+        {
+            remainingTime = 0;
+        }
+        //right timer
+        int rightHours = (int) (remainingTime / (60000*60));
+        int rightMinutes = (int) (remainingTime / 60000);
+        int rightSeconds = (int) ((remainingTime % 60000) / 1000);
+
+        //left timer
+        int leftHours = (int) (timeElapsed / (60000*60));
+        int leftMinutes = (int) (timeElapsed / 60000);
+        int leftSeconds = (int) ((timeElapsed %60000)/1000);
+        //set the left and right timer labels with new time
+
+        //set the labels with format
+        rightTimer.setText(format.format(rightHours) +":" + format.format(rightMinutes) + ":" + format.format(rightSeconds));
+        leftTimer.setText(format.format(leftHours) +":" + format.format(leftMinutes) + ":" + format.format(leftSeconds));
+
+    }
+
+
+    //this class is necessary to tick the progress bar from 0 to complete
+    class Progress extends SwingWorker<Void, Void> {
+        public Void doInBackground(){   //runs in background similar to multithreading
+            setProgress(0);             //start progress bar at 0
+            songChanged=false;
+            //loop while song is playing. stop when song finished or someone changes the song.
+            while (timeElapsed <= songLength && !songChanged) {
+                try {
+                    Thread.sleep(1000);//sleep for a second
+                } catch (InterruptedException e) {
+                }
+
+                double prog = ((double)timeElapsed/(double)songLength)*100.0;
+                int progress = (int)prog;
+                setProgress(Math.min(progress, 100));
+            }
+            songChanged=false;
+        return null;
+        }
+        public void done()//do this when progress bar reaches the end.
+        {
+            progressBar.setValue(0);
+        }
+    }
+
+    //was getting bugs when trying to clear bar. This helped clear the issue. Used on stop button
+    class ProgressBarStopListener implements ActionListener {
+        public void actionPerformed (ActionEvent evt)
+        {
+            clearProgressBar();
+
+        }
+    }
+    //adds listener to the play button
+    class ProgressBarListener implements ActionListener, PropertyChangeListener {
+        public void actionPerformed(ActionEvent evt)
+        {
+            songChanged=false;
+            songLength = getDurationWithMp3Spi(ShiTunes.db.getSongFilePath(Integer.parseInt(musicTable.getTable().getValueAt(0, MusicTable.COL_ID).toString())));
+            task= new Progress();
+            task.addPropertyChangeListener(this);
+            task.execute();
+
+
+        }
+        //do this when progress changes in doInBackgroundMethod
+        public void propertyChange (PropertyChangeEvent evt)
+        {
+           //int progress = (Integer) evt.getNewValue();
+            int progress = task.getProgress();
+            progressBar.setValue(progress);
+        }
+    }
+    //used when changing songs
+    private void clearProgressBar()
+    {
+        remainingTime=0;
+        timeElapsed = 0;
+        updateDisplayTimer();
+        songChanged = true;
+        rightTimer.setText("00:00:00");
+        leftTimer.setText("00:00:00");
+        progressBar.setValue(0);
+    }
     /* ********************* */
     /* Music Table Listeners */
     /* ********************* */
@@ -632,14 +782,22 @@ public class Window
      * <p>
      * Plays the song that is double clicked.
      */
-    class DoubleClickListener extends MouseAdapter {
+    class DoubleClickListener extends MouseAdapter{
         public void mousePressed(MouseEvent me) {
             if (me.getClickCount() == 2) {
                 // set loaded song and play
+                clearProgressBar();
                 int row = musicTable.getTable().getSelectedRow();
                 int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
                 player.setLoadedSongRow(row);
+                songLength = getDurationWithMp3Spi(ShiTunes.db.getSongFilePath(songId));
+                task= new Progress();
+                task.addPropertyChangeListener(new ProgressBarListener());
+                task.execute();
                 player.play(ShiTunes.db.getSongFilePath(songId));
+                timer.start();
+                timeUpdate = System.currentTimeMillis();
+
                 ShiTunes.db.addRecentSong(songId);
                 updateRecentSongsMenu();
             }
@@ -971,10 +1129,19 @@ public class Window
                     // decrement player.currentSongIndex
                     // play previous song
                     player.stop();
+                    timer.stop();
+                    timeUpdate = System.currentTimeMillis();
                     int songId = Integer.parseInt(musicTable.getTable().getValueAt(previousSongRow, MusicTable.COL_ID).toString());
                     player.setLoadedSongRow(previousSongRow);
                     musicTable.getTable().setRowSelectionInterval(previousSongRow, previousSongRow);
+                    clearProgressBar();
+                    songLength = getDurationWithMp3Spi(ShiTunes.db.getSongFilePath(songId));
+                    songChanged=false;
                     player.play(ShiTunes.db.getSongFilePath(songId));
+
+                    timer.start();
+                    timeUpdate = System.currentTimeMillis();
+
                     ShiTunes.db.addRecentSong(songId);
                     updateRecentSongsMenu();
                 }
@@ -995,17 +1162,25 @@ public class Window
             boolean selectedSongIsLoaded =
                      selectedRow == player.getLoadedSongRow();
             int songId;
+
+           // if (!selectedSongIsLoaded)
+               // clearProgressBar();
             if (selectedSongIsLoaded && playerState == BasicPlayerEvent.PAUSED) {
                 // if selected song is current song on player
                 // and player.state == paused
+
                 player.resume();
+                timer.start();//start timer for progress bar
+                timeUpdate = System.currentTimeMillis(); //used for timer
             } else {
                 if(selectedRow == -1) {
                     // if no row selected:
                     // set loaded song to first song in table
                     songId = Integer.parseInt(musicTable.getTable().getValueAt(0, MusicTable.COL_ID).toString());
+
                     musicTable.getTable().setRowSelectionInterval(0, 0);
                     player.setLoadedSongRow(0);
+                    clearProgressBar();
                 } else {
                     // selected song found
                     songId = Integer.parseInt(musicTable.getTable().getValueAt(selectedRow, MusicTable.COL_ID).toString());
@@ -1017,9 +1192,13 @@ public class Window
                     playerState == BasicPlayerEvent.PAUSED) {
                     // stop player
                     player.stop();
+                    timeUpdate = System.currentTimeMillis();
+                    timer.stop();
+                    clearProgressBar();
                 }
-
                 player.play(ShiTunes.db.getSongFilePath(songId));
+                timer.start();
+                timeUpdate = System.currentTimeMillis();
                 ShiTunes.db.addRecentSong(songId);
                 updateRecentSongsMenu();
             }
@@ -1041,8 +1220,12 @@ public class Window
         public void actionPerformed(ActionEvent e) {
             if(playerState == BasicPlayerEvent.PLAYING ||
                playerState == BasicPlayerEvent.RESUMED) {
+                timeUpdate = System.currentTimeMillis();
+                timer.stop();
                 player.pause();
+
             }
+
         }
     }
 
@@ -1054,7 +1237,10 @@ public class Window
      */
     class StopListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
+
+            timer.stop();
             player.stop();
+
         }
     }
 
@@ -1073,11 +1259,17 @@ public class Window
             if(nextSongIndex <= lastItemInTable) {
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
+                    timer.stop();
                     player.stop();  // stop currently playing song
+                    clearProgressBar();
                     int songId = Integer.parseInt(musicTable.getTable().getValueAt(nextSongIndex, MusicTable.COL_ID).toString());
                     player.setLoadedSongRow(nextSongIndex); // set player loaded song to next song
                     musicTable.getTable().setRowSelectionInterval(nextSongIndex, nextSongIndex); // highlight next song
+                    songLength = getDurationWithMp3Spi(ShiTunes.db.getSongFilePath(songId));
+                    songChanged=false;
                     player.play(ShiTunes.db.getSongFilePath(songId)); // play next song
+                    timeUpdate = System.currentTimeMillis();
+                    timer.start();
                     ShiTunes.db.addRecentSong(songId);
                     updateRecentSongsMenu();
                 }
@@ -1103,6 +1295,20 @@ public class Window
                 double volume = source.getValue() / 100.00;
                 player.adjustVolume(volume);
             }
+        }
+    }
+
+    /**
+     * Progress bar timer listener:
+     * <p>
+     *     Updates the timer from the progress bar
+     * </p>
+     */
+    class TimerActionListener implements ActionListener
+    {
+        public void actionPerformed (ActionEvent e)
+        {
+            updateDisplayTimer();
         }
     }
 
@@ -1207,7 +1413,11 @@ public class Window
                         // stop player
                         player.stop();
                     }
+                    songLength = getDurationWithMp3Spi(selectedSong.getFilePath());
+
                     player.play(selectedSong.getFilePath());
+                    timer.start();
+                    timeUpdate = System.currentTimeMillis();
                 }
             }
     }
@@ -1415,6 +1625,21 @@ public class Window
     public void setController(BasicController controller)
     {
         // System.out.println("setController : " + controller);
+    }
+
+    private static long getDurationWithMp3Spi(String filePath)
+    {
+        long duration=0;
+        try {
+            File file = new File(filePath);
+            AudioFileFormat baseFileFormat = AudioSystem.getAudioFileFormat(file);
+            Map properties = baseFileFormat.properties();
+            duration = (Long) properties.get("duration");
+        }
+        catch(IOException | UnsupportedAudioFileException e)
+        {e.printStackTrace();}
+        return duration/1000;
+
     }
 
     /* ********************* *
