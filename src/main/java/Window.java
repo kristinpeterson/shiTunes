@@ -1319,8 +1319,10 @@ public class Window
                         selectedSongRow, MusicTable.COL_ID).toString());
 
                 // Stop player if song being deleted is the current song on the player
+                // and clear progress bar
                 if(selectedSongRow == player.getLoadedSongRow()) {
                     player.stop();
+                    clearProgressBar();
                 }
 
                 model.removeRow(selectedSongRow);
@@ -1336,6 +1338,9 @@ public class Window
             // Update all windows in the event that the song(s) being removed from the table
             // is also present in another window/table
             ShiTunes.updateAllWindows();
+
+            // Update recent songs menu (in case any recent songs were deleted)
+            updateRecentSongsMenu();
         }
     }
 
@@ -1412,6 +1417,7 @@ public class Window
         // if time remaining less than 1 second, set songCompleted flag to true
         if(timeRemaining < 1000) {
             songCompleted = true;
+            clearProgressBar();
         }
     }
 
@@ -1433,7 +1439,11 @@ public class Window
             // do nothing, retain previous state
         }
 
+        System.out.println("playerState: " + playerState);
+        System.out.println("songCompleted: " + songCompleted);
+
         if(playerState == BasicPlayerEvent.STOPPED && songCompleted) {
+            System.out.println("calling next listener");
             NextListener nextListener = new NextListener();
             nextListener.actionPerformed(null);
             songCompleted = false;

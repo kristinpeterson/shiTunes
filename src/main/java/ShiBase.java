@@ -756,7 +756,10 @@ public class ShiBase {
     private boolean createRecentSongTable() {
         try {
             String query = "CREATE TABLE " + RECENT_SONGS_TABLE +
-                    " (songId INTEGER)";
+                    " (songId INTEGER NOT NULL, " +
+                    "CONSTRAINT fk_recent_songId FOREIGN KEY (songId) " +
+                    "REFERENCES " + SONG_TABLE + " (songId) " +
+                    "ON DELETE CASCADE)";
             stmt = conn.prepareStatement(query);
             stmt.execute();
             stmt.close();
