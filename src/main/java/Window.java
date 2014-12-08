@@ -747,7 +747,7 @@ public class Window
         public void actionPerformed(ActionEvent evt)
         {
             songChanged=false;
-            songLength = getDurationWithMp3Spi(ShiTunes.db.getSongFilePath(Integer.parseInt(musicTable.getTable().getValueAt(0, MusicTable.COL_ID).toString())));
+            songLength = getDurationWithMp3Spi(ShiTunes.db.getSongFilePath(Integer.parseInt(musicTable.getTable().getValueAt(musicTable.getTable().getSelectedRow(), MusicTable.COL_ID).toString())));
             task= new Progress();
             task.addPropertyChangeListener(this);
             task.execute();
