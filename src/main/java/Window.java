@@ -87,7 +87,6 @@ public class Window
     private JLabel rightTimer;
     private long timeRemaining;
     private long timeElapsed;
-    private javax.swing.Timer timer;
     private Progress task = new Progress();
     private Boolean songChanged;
     private int duration;
@@ -188,8 +187,6 @@ public class Window
         controlTablePanel.add(getControlPanel());
         controlTablePanel.add(musicTableScrollPane);
         controlTablePanel.setMinimumSize(new Dimension(500, 600));
-        JPanel progressBarPanel = getProgressBar();
-        controlTablePanel.add(progressBarPanel);
 
         // Create menuBar and add File/Control menus
         JMenuBar menuBar = new JMenuBar();
@@ -372,6 +369,7 @@ public class Window
             volumeSlider.addChangeListener(new VolumeSliderListener());
 
             // Add buttons to controlPanel
+            controlPanel.add(getProgressBar());
             controlPanel.add(previousButton);
             controlPanel.add(playButton);
             controlPanel.add(pauseButton);
@@ -655,12 +653,11 @@ public class Window
         progressBar.setString("");
 
         //timer is used for the timer. Similar to threads, it runs in the background: actions happen based on time
-        timer = new javax.swing.Timer(1000, new TimerActionListener());
         progressBarPanel.add(leftTimer);
         progressBarPanel.add(progressBar);
         progressBarPanel.add(rightTimer);
-        return progressBarPanel;
 
+        return progressBarPanel;
     }
 
     //gets called every .1 seconds to update the timer.
@@ -1080,7 +1077,6 @@ public class Window
                     // decrement player.currentSongIndex
                     // play previous song
                     player.stop();
-                    timer.stop();
 
                     playSong(previousSongRow);
                 }
@@ -1105,7 +1101,6 @@ public class Window
                 // if selected song is current song on player
                 // and player.state == paused
                 player.resume();
-                timer.start();//start timer for progress bar
             } else {
                 if(selectedRow == -1) {
                     // if no row selected:
@@ -1117,7 +1112,6 @@ public class Window
                     playerState == BasicPlayerEvent.PAUSED) {
                     // stop player
                     player.stop();
-                    timer.stop();
                 }
                 playSong(selectedRow);
             }
@@ -1139,7 +1133,6 @@ public class Window
         public void actionPerformed(ActionEvent e) {
             if(playerState == BasicPlayerEvent.PLAYING ||
                playerState == BasicPlayerEvent.RESUMED) {
-                timer.stop();
                 player.pause();
 
             }
@@ -1155,7 +1148,6 @@ public class Window
      */
     class StopListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            timer.stop();
             player.stop();
             clearProgressBar();
         }
@@ -1176,7 +1168,6 @@ public class Window
             if(nextSongIndex <= lastItemInTable) {
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
-                    timer.stop();
                     player.stop();  // stop currently playing song
                     playSong(nextSongIndex);
                 }
@@ -1202,20 +1193,6 @@ public class Window
                 double volume = source.getValue() / 100.00;
                 player.adjustVolume(volume);
             }
-        }
-    }
-
-    /**
-     * Progress bar timer listener:
-     * <p>
-     *     Updates the timer from the progress bar
-     * </p>
-     */
-    class TimerActionListener implements ActionListener
-    {
-        public void actionPerformed (ActionEvent e)
-        {
-            updateDisplayTimer();
         }
     }
 
@@ -1322,7 +1299,6 @@ public class Window
                     }
 
                     player.play(selectedSong.getFilePath());
-                    timer.start();
                 }
             }
     }
@@ -1501,6 +1477,7 @@ public class Window
 
         timeElapsed = microseconds/1000;
         timeRemaining = duration - timeElapsed;
+        updateDisplayTimer();
     }
 
     /**
@@ -1619,7 +1596,6 @@ public class Window
         task.addPropertyChangeListener(new ProgressBarListener());
         task.execute();
         player.play(ShiTunes.db.getSongFilePath(songId));
-        timer.start();
         ShiTunes.db.addRecentSong(songId);
         updateRecentSongsMenu();
     }
