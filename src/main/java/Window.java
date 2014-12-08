@@ -1077,9 +1077,7 @@ public class Window
             if(playerState == BasicPlayerEvent.PLAYING ||
                playerState == BasicPlayerEvent.RESUMED) {
                 player.pause();
-
             }
-
         }
     }
 
@@ -1112,8 +1110,8 @@ public class Window
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
                     player.stop();  // stop currently playing song
-                    playSong(nextSongIndex);
                 }
+                playSong(nextSongIndex);
             }
         }
     }
@@ -1439,11 +1437,7 @@ public class Window
             // do nothing, retain previous state
         }
 
-        System.out.println("playerState: " + playerState);
-        System.out.println("songCompleted: " + songCompleted);
-
         if(playerState == BasicPlayerEvent.STOPPED && songCompleted) {
-            System.out.println("calling next listener");
             NextListener nextListener = new NextListener();
             nextListener.actionPerformed(null);
             songCompleted = false;
