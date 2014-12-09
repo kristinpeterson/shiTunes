@@ -87,6 +87,8 @@ public class Window
     private int duration;
     private boolean songCompleted;
     private JCheckBoxMenuItem shuffleItem;
+    private boolean onRepeat = false;
+
 
 
     /**
@@ -447,7 +449,7 @@ public class Window
         increaseVolumeItem.addActionListener(new VolumeIncreaseListener());
         decreaseVolumeItem.addActionListener(new VolumeDecreaseListener());
         shuffleItem.addActionListener(new ShuffleListener());
-        //repeatItem.addActionListener();
+        repeatItem.addActionListener(new RepeatListener());
 
         menu.add(playItem);
         menu.add(nextItem);
@@ -1229,6 +1231,18 @@ public class Window
         }
     }
 
+    class RepeatListener implements ActionListener {
+        public void actionPerformed(ActionEvent evt) {
+            AbstractButton repeatButton = (AbstractButton) evt.getSource();
+            boolean selected = repeatButton.getModel().isSelected();
+
+            if (selected)
+                onRepeat = true;
+            else
+                onRepeat = false;
+        }
+    }
+
     /* ******************* */
     /* File Menu Listeners */
     /* ******************* */
@@ -1456,9 +1470,13 @@ public class Window
         }
 
         if(playerState == BasicPlayerEvent.STOPPED && songCompleted) {
-            NextListener nextListener = new NextListener();
-            nextListener.actionPerformed(null);
-            songCompleted = false;
+            if (!onRepeat) {
+                NextListener nextListener = new NextListener();
+                nextListener.actionPerformed(null);
+                songCompleted = false;
+            }
+            else
+                playSong(player.getLoadedSongRow());
         }
     }
 
@@ -1555,6 +1573,7 @@ public class Window
             Random r = new Random();
             row = r.nextInt(musicTable.getTable().getRowCount());
         }
+
 
         clearProgressBar();
         int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
