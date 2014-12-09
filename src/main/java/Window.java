@@ -1108,7 +1108,8 @@ public class Window
             int lastItemInTable = musicTable.getTable().getRowCount() - 1;
 
             // Only skip to next if the loaded song is not the last item in the table
-            if(nextSongIndex <= lastItemInTable) {
+            // or shuffle is selected
+            if(nextSongIndex <= lastItemInTable || shuffleItem.isSelected()) {
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
                     player.stop();  // stop currently playing song
@@ -1196,7 +1197,7 @@ public class Window
             if (!(musicTable.getTable().getParent() instanceof JViewport)) {
                 return;
             }
-            
+
             // Get cell rectangle for loaded song row
             Rectangle rect = musicTable.getTable().getCellRect(player.getLoadedSongRow(), 0, true);
 
