@@ -26,12 +26,6 @@ public class MusicTable {
                                                         "Genre", "Comment"};
     public static final int COL_ID = 0;
     public static final int COL_FILE_PATH = 1;
-    public static final int COL_TITLE = 2;
-    public static final int COL_ARTIST = 3;
-    public static final int COL_ALBUM = 4;
-    public static final int COL_YEAR = 5;
-    public static final int COL_GENRE = 6;
-    public static final int COL_COMMENT = 7;
 
     /**
      * Default constructor for MusicTable

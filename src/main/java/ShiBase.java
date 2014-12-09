@@ -9,14 +9,12 @@ import java.util.ArrayList;
  */
 public class ShiBase {
 
-    public static String DB_NAME = "ShiBase";
-    public static final String SONG_TABLE = "SONG";
-    public static final String PLAYLIST_TABLE = "PLAYLIST";
-    public static final String PLAYLIST_SONG_TABLE = "PLAYLIST_SONG";
-    public static final String COLUMN_CONFIG_TABLE = "COLUMN_CONFIG";
-    public static final String RECENT_SONGS_TABLE = "RECENT_SONGS";
-
-
+    private static final String DB_NAME = "ShiBase";
+    private static final String SONG_TABLE = "SONG";
+    private static final String PLAYLIST_TABLE = "PLAYLIST";
+    private static final String PLAYLIST_SONG_TABLE = "PLAYLIST_SONG";
+    private static final String COLUMN_CONFIG_TABLE = "COLUMN_CONFIG";
+    private static final String RECENT_SONGS_TABLE = "RECENT_SONGS";
     private static final String[] SONG_COLUMNS =  {"songId", "filePath", "title", "artist", "album", "yearReleased",
             "genre", "comment"};
     private static final String[] PLAYLIST_COLUMNS = {"playlistId", "playlistName"};
@@ -103,41 +101,6 @@ public class ShiBase {
         return connected;
     }
 
-    /**
-     * Closes ShiBase database connection
-     *
-     * @return true if connection closed successfully
-     */
-    public boolean close() {
-        try {
-            conn.close();
-            return true;
-        } catch (SQLException sqle) {
-            sqle.printStackTrace();
-        }
-        return false;
-    }
-
-    /**
-     * Drops the given table from ShiBase database
-     *
-     * @return true if the table was dropped successfully
-     */
-    public boolean dropTable(String tableName) {
-        try
-        {
-            String query ="DROP TABLE " + tableName;
-            stmt = conn.prepareStatement(query);
-            stmt.execute();
-            stmt.close();
-        }
-        catch (SQLException sqlExcept)
-        {
-            sqlExcept.printStackTrace();
-            return false;
-        }
-        return true;
-    }
 
     /* ******************* */
     /* ******************* */

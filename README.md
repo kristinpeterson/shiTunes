@@ -1,6 +1,6 @@
 # shiTunes: a desktop music player
 
-A desktop music library manager and player developed in Java for a CECS 324 - 
+A desktop music library manager and player developed in Java for a CECS 343 - 
 Software Engineering at California State University Long Beach.
 
 ##Dependencies

@@ -631,8 +631,6 @@ public class Window
         progressBar.setStringPainted(true);
         progressBar.setString("");
 
-        UIManager.put("ProgressBar.background", Color.ORANGE);
-
         //timer is used for the timer. Similar to threads, it runs in the background: actions happen based on time
         progressBarPanel.add(leftTimer);
         progressBarPanel.add(progressBar);
@@ -690,7 +688,7 @@ public class Window
      * <p>
      * Plays the song that is double clicked.
      */
-    class DoubleClickListener extends MouseAdapter{
+    private class DoubleClickListener extends MouseAdapter{
         public void mousePressed(MouseEvent me) {
             if (me.getClickCount() == 2) {
                 int row = musicTable.getTable().getSelectedRow();
@@ -703,7 +701,7 @@ public class Window
      * Popup listener for the right click menu on Music Table
      *
      */
-    class MusicTablePopupListener extends MouseAdapter {
+    private class MusicTablePopupListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
             maybeShowPopup(e);
@@ -725,7 +723,7 @@ public class Window
      * Popup listener for the right click menu on Column Titles
      *
      */
-    class ColumnDisplayPopupListener extends MouseAdapter {
+    private class ColumnDisplayPopupListener extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent e) {
             maybeShowPopup(e);
@@ -753,7 +751,7 @@ public class Window
      * <li>If this is a Playlist table: add songs to table & playlist (& database if not already)</li>
      * </ul>
      */
-    class AddToTableDropTarget extends DropTarget {
+    private class AddToTableDropTarget extends DropTarget {
         @Override
         public synchronized void drop(DropTargetDropEvent dtde) {
             dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
@@ -808,7 +806,7 @@ public class Window
     /* Playlist Panel Listeners */
     /* ************************ */
 
-    class NewWindowListener implements  ActionListener {
+    private class NewWindowListener implements  ActionListener {
         public void actionPerformed(ActionEvent e) {
             // Switch back to Library table in MAIN app window
             musicTable.updateTableModel("Library");
@@ -827,7 +825,7 @@ public class Window
          * the Playlist Panel
          *
          */
-    class PlaylistPanelMouseListener extends MouseAdapter {
+    private class PlaylistPanelMouseListener extends MouseAdapter {
 
         @Override
         public void mouseReleased(MouseEvent e) {
@@ -900,7 +898,7 @@ public class Window
      * New, empty playlist is added to database.
      * Window is refreshed to reflect changes.
      */
-    class CreatePlaylistListener implements ActionListener {
+    private class CreatePlaylistListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             // Display message box with a textfield for user to type into
             JFrame createPLFrame = new JFrame("Create New Playlist");
@@ -946,7 +944,7 @@ public class Window
      * Window is refreshed to reflect changes.
      *
      */
-    class DeletePlaylistListener implements ActionListener {
+    private class DeletePlaylistListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             JFrame confirmDeleteFrame = new JFrame("Delete Playlist");
             int answer = JOptionPane.showConfirmDialog(confirmDeleteFrame,
@@ -975,7 +973,7 @@ public class Window
      * Note: the playlist name must be passed as a parameter
      *
      */
-    class AddSongToPlaylistListener implements ActionListener {
+    private class AddSongToPlaylistListener implements ActionListener {
         private String playlist;
 
         public AddSongToPlaylistListener(String playlistName) {
@@ -1002,7 +1000,7 @@ public class Window
     /**
      * A listener for the Previous Song action
      */
-    class PreviousListener implements ActionListener {
+    private class PreviousListener implements ActionListener {
         /**
          * If player state is currently playing/resumed
          * stop the current song, decrement the song index
@@ -1037,7 +1035,7 @@ public class Window
      * Plays the selected song loaded, if the conditions are right.
      *
      */
-    class PlayListener implements ActionListener {
+    private class PlayListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             int selectedRow = musicTable.getTable().getSelectedRow();
             // boolean indicator, true if selected song is currently loaded to player
@@ -1071,7 +1069,7 @@ public class Window
      * Pauses the currently playing song
      *
      */
-    class PauseListener implements ActionListener {
+    private class PauseListener implements ActionListener {
         /**
          * Calls the MusicPlayer pause function when event occurs
          *
@@ -1091,7 +1089,7 @@ public class Window
      * Stops currently playing song
      *
      */
-    class StopListener implements ActionListener {
+    private class StopListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             player.stop();
             clearProgressBar();
@@ -1104,7 +1102,7 @@ public class Window
      * Highlights and plays the next song in the table (if there is one)
      *
      */
-    class NextListener implements ActionListener {
+    private class NextListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             int nextSongIndex = player.getLoadedSongRow() + 1;
             int lastItemInTable = musicTable.getTable().getRowCount() - 1;
@@ -1129,7 +1127,7 @@ public class Window
      * set basic player gain (volume) to a value it understands.
      *
      */
-    class VolumeSliderListener implements ChangeListener {
+    private class VolumeSliderListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
             JSlider source = (JSlider)e.getSource();
             if (!source.getValueIsAdjusting()) {
@@ -1152,7 +1150,7 @@ public class Window
      * Increases volume by 5%
      *
      */
-    class VolumeIncreaseListener implements ActionListener {
+    private class VolumeIncreaseListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             double volume = player.getVolume();
             if(volume < .95) {
@@ -1174,7 +1172,7 @@ public class Window
      * Decreases volume by 5%
      *
      */
-    class VolumeDecreaseListener implements ActionListener {
+    private class VolumeDecreaseListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             double volume = player.getVolume();
             if(volume > 0.05) {
@@ -1194,7 +1192,7 @@ public class Window
      * Scroll to currently loaded song row listener
      *
      */
-    class GoToCurrentListener implements ActionListener {
+    private class GoToCurrentListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             if (!(musicTable.getTable().getParent() instanceof JViewport)) {
                 return;
@@ -1217,7 +1215,7 @@ public class Window
      *      playSong() is called which will pay a random song since shuffle is enabled
      *
      */
-    class ShuffleListener implements ActionListener {
+    private class ShuffleListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             if(shuffleItem.isSelected()){
                 repeatItem.setEnabled(false);
@@ -1239,7 +1237,7 @@ public class Window
      * If repeat has been unchecked: shuffle is enabled
      *
      */
-    class RepeatListener implements ActionListener {
+    private class RepeatListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             if(repeatItem.isSelected()){
                 shuffleItem.setEnabled(false);
@@ -1260,7 +1258,7 @@ public class Window
      * "quickPlay" method, which
      *
      */
-    class OpenItemListener implements ActionListener {
+    private class OpenItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
                 JFileChooser chooser = new JFileChooser();
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
@@ -1294,7 +1292,7 @@ public class Window
      * also present in another window/table.
      *
      */
-    class AddSongListener implements ActionListener {
+    private class AddSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             FileNameExtensionFilter filter = new FileNameExtensionFilter("MP3 Files", "mp3");
             JFileChooser chooser = new JFileChooser();
@@ -1338,7 +1336,7 @@ public class Window
      * also present in another window/table.
      *
      */
-    class DeleteSongListener implements ActionListener {
+    private class DeleteSongListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             int[] selectedRows = musicTable.getTable().getSelectedRows();
 
@@ -1387,7 +1385,7 @@ public class Window
      * exit the shiTunes program gracefully
      *
      */
-    class ExitItemListener implements ActionListener {
+    private class ExitItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             if(windowType == Window.MAIN) {
                 ShiTunes.db.close();
@@ -1413,18 +1411,6 @@ public class Window
      */
     public void opened(Object stream, Map properties)
     {
-        // Pay attention to properties. It's useful to get duration,
-        // bitrate, channels, even tag such as ID3v2.
-        // System.out.println("opened : "+properties.toString());
-
-        // Print properties map:
-        //Iterator it = properties.entrySet().iterator();
-        //while (it.hasNext()) {
-        //    Map.Entry pairs = (Map.Entry)it.next();
-        //    System.out.println(pairs.getKey() + " = " + pairs.getValue());
-        //    it.remove(); // avoids a ConcurrentModificationException
-        //}
-
         duration = Integer.parseInt(properties.get("duration").toString()) / 1000;
     }
 
@@ -1442,10 +1428,6 @@ public class Window
      */
     public void progress(int bytesread, long microseconds, byte[] pcmdata, Map properties)
     {
-        // Pay attention to properties. It depends on underlying JavaSound SPI
-        // MP3SPI provides mp3.equalizer.
-        // System.out.println("progress : "+properties.toString());
-
         timeElapsed = microseconds/1000;
         timeRemaining = duration - timeElapsed;
         updateProgress();
@@ -1512,7 +1494,7 @@ public class Window
      * Window listener for Window.type == PLAYLIST
      *
      */
-    class PlaylistWindowListener implements WindowListener {
+    private class PlaylistWindowListener implements WindowListener {
          @Override
          public void windowActivated(WindowEvent e) {
          }
@@ -1542,25 +1524,6 @@ public class Window
          @Override
          public void windowIconified(WindowEvent e) {
          }
-    }
-
-    /**
-     * Gets the MusicTable associated with this Window
-     *
-     * @return the MusicTable associated with this Window
-     */
-    public MusicTable getMusicTable() {
-        return musicTable;
-    }
-
-    /**
-     * Gets the name of the playlist that this current window is displaying
-     * (returns "Library" if it is the "Library" table)
-     *
-     * @return the MusicTable associated with this Window
-     */
-    public String getSelectedPlaylist() {
-        return selectedPlaylist;
     }
 
     /*
