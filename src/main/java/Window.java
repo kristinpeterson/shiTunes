@@ -86,7 +86,7 @@ public class Window
     private long timeElapsed;
     private int duration;
     private boolean songCompleted;
-    private JCheckBox selectRandom = new JCheckBox("Shuffle");;
+    private JCheckBoxMenuItem shuffleItem;
 
 
     /**
@@ -373,7 +373,6 @@ public class Window
             controlPanel.add(stopButton);
             controlPanel.add(nextButton);
             controlPanel.add(volumeSlider);
-            controlPanel.add(selectRandom);
 
             controlPanel.setMaximumSize(new Dimension(1080, 40));
         } catch (IOException e) {
@@ -426,7 +425,7 @@ public class Window
         JMenuItem goToCurrentItem = new JMenuItem("Go To Current Song");
         JMenuItem increaseVolumeItem = new JMenuItem("Increase Volume");
         JMenuItem decreaseVolumeItem = new JMenuItem("Decrease Volume");
-        JCheckBoxMenuItem shuffleItem = new JCheckBoxMenuItem("Shuffle");
+        shuffleItem = new JCheckBoxMenuItem("Shuffle");
         JCheckBoxMenuItem repeatItem = new JCheckBoxMenuItem("Repeat");
 
         // Build play recent menu
@@ -447,7 +446,7 @@ public class Window
         goToCurrentItem.addActionListener(new GoToCurrentListener());
         increaseVolumeItem.addActionListener(new VolumeIncreaseListener());
         decreaseVolumeItem.addActionListener(new VolumeDecreaseListener());
-        //shuffleItem.addActionListener();
+        shuffleItem.addActionListener(new ShuffleListener());
         //repeatItem.addActionListener();
 
         menu.add(playItem);
@@ -1114,13 +1113,7 @@ public class Window
                    playerState == BasicPlayerEvent.RESUMED) {
                     player.stop();  // stop currently playing song
                 }
-                if (selectRandom.isSelected()) {
-                    Random r = new Random();
-                    int randomSong = r.nextInt(musicTable.getTable().getRowCount());
-                    playSong(randomSong);
-                }
-                else
-                    playSong(nextSongIndex);
+                playSong(nextSongIndex);
             }
         }
     }
@@ -1217,6 +1210,30 @@ public class Window
             rect.setLocation(rect.x-pt.x, rect.y-pt.y);
 
             musicTable.getTable().scrollRectToVisible(rect);
+        }
+    }
+
+    /**
+     * Shuffle listener
+     *
+     * Checks if player is !playing && shuffle is checked:
+     * if so, plays a random song
+     * if not, does nothing
+     *
+     * Notes:
+     * - if shuffle is checked while a song is playing the next song will be random
+     * - if shuffle is unchecked while a song is playing the next song is the song following current song
+     *
+     */
+    class ShuffleListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if(playerState != BasicPlayerEvent.PLAYING && shuffleItem.isSelected()){
+                // player was not playing - thus, play random song
+                // (value passed to playSong does not matter as a random song will be selected)
+                playSong(0);
+            } else {
+                // do nothing
+            }
         }
     }
 
@@ -1541,6 +1558,12 @@ public class Window
      * @param row
      */
     private void playSong(int row) {
+        // If shuffle mode on, switch to random row
+        if (shuffleItem.isSelected()) {
+            Random r = new Random();
+            row = r.nextInt(musicTable.getTable().getRowCount());
+        }
+        
         clearProgressBar();
         int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
         player.setLoadedSongRow(row);
@@ -1548,5 +1571,12 @@ public class Window
         player.play(ShiTunes.db.getSongFilePath(songId));
         ShiTunes.db.addRecentSong(songId);
         updateRecentSongsMenu();
+
+        // if shuffle selected, ensure it is visible on screen
+        // using GoToCurrentListener
+        if(shuffleItem.isSelected()) {
+            GoToCurrentListener goToCurrentSong = new GoToCurrentListener();
+            goToCurrentSong.actionPerformed(null);
+        }
     }
 }
