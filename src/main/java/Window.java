@@ -1572,11 +1572,8 @@ public class Window
         ShiTunes.db.addRecentSong(songId);
         updateRecentSongsMenu();
 
-        // if shuffle selected, ensure it is visible on screen
-        // using GoToCurrentListener
-        if(shuffleItem.isSelected()) {
-            GoToCurrentListener goToCurrentSong = new GoToCurrentListener();
-            goToCurrentSong.actionPerformed(null);
-        }
+        // scroll to song being played
+        GoToCurrentListener goToCurrentSong = new GoToCurrentListener();
+        goToCurrentSong.actionPerformed(null);
     }
 }
