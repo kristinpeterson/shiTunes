@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 
 
 /**
@@ -85,6 +86,7 @@ public class Window
     private long timeElapsed;
     private int duration;
     private boolean songCompleted;
+    private JCheckBox selectRandom = new JCheckBox("Shuffle");;
 
 
     /**
@@ -155,7 +157,7 @@ public class Window
         // Create outer shiTunes frame and set various parameters
         windowFrame = new JFrame();
         windowFrame.setTitle(windowTitle);
-        windowFrame.setMinimumSize(new Dimension(900, 600));
+        windowFrame.setMinimumSize(new Dimension(950, 600));
         windowFrame.setLocationRelativeTo(null);
 
         if(windowType == Window.MAIN) {
@@ -371,6 +373,7 @@ public class Window
             controlPanel.add(stopButton);
             controlPanel.add(nextButton);
             controlPanel.add(volumeSlider);
+            controlPanel.add(selectRandom);
 
             controlPanel.setMaximumSize(new Dimension(1080, 40));
         } catch (IOException e) {
@@ -1111,7 +1114,13 @@ public class Window
                    playerState == BasicPlayerEvent.RESUMED) {
                     player.stop();  // stop currently playing song
                 }
-                playSong(nextSongIndex);
+                if (selectRandom.isSelected()) {
+                    Random r = new Random();
+                    int randomSong = r.nextInt(musicTable.getTable().getRowCount());
+                    playSong(randomSong);
+                }
+                else
+                    playSong(nextSongIndex);
             }
         }
     }
