@@ -157,7 +157,7 @@ public class Window
         // Create outer shiTunes frame and set various parameters
         windowFrame = new JFrame();
         windowFrame.setTitle(windowTitle);
-        windowFrame.setMinimumSize(new Dimension(950, 600));
+        windowFrame.setMinimumSize(new Dimension(900, 600));
         windowFrame.setLocationRelativeTo(null);
 
         if(windowType == Window.MAIN) {
@@ -1563,7 +1563,7 @@ public class Window
             Random r = new Random();
             row = r.nextInt(musicTable.getTable().getRowCount());
         }
-        
+
         clearProgressBar();
         int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
         player.setLoadedSongRow(row);
