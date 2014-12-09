@@ -1204,11 +1204,6 @@ public class Window
             // The location of the viewport relative to the table
             Point pt = viewport.getViewPosition();
 
-            // Translate the cell location so that it is relative
-            // to the view, assuming the northwest corner of the
-            // view is (0,0)
-            rect.setLocation(rect.x-pt.x, rect.y-pt.y);
-
             musicTable.getTable().scrollRectToVisible(rect);
         }
     }
