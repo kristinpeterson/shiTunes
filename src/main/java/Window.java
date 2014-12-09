@@ -1014,7 +1014,7 @@ public class Window
             // Only skip to previous if the loaded song is not the first item in the table
             // and the loaded song is not set to -1 flag (which indicates that the
             // loaded song was opened via the File->Open menu)
-            if(previousSongRow >= 0) {
+            if(previousSongRow >= 0 || shuffleItem.isSelected()) {
                 if(playerState == BasicPlayerEvent.PLAYING ||
                    playerState == BasicPlayerEvent.RESUMED) {
                     // if player is currently playing/resumed
