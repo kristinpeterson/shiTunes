@@ -1196,13 +1196,9 @@ public class Window
             if (!(musicTable.getTable().getParent() instanceof JViewport)) {
                 return;
             }
-            JViewport viewport = (JViewport)musicTable.getTable().getParent();
-
+            
             // Get cell rectangle for loaded song row
             Rectangle rect = musicTable.getTable().getCellRect(player.getLoadedSongRow(), 0, true);
-
-            // The location of the viewport relative to the table
-            Point pt = viewport.getViewPosition();
 
             musicTable.getTable().scrollRectToVisible(rect);
         }
