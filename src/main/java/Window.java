@@ -87,7 +87,7 @@ public class Window
     private int duration;
     private boolean songCompleted;
     private JCheckBoxMenuItem shuffleItem;
-    private boolean onRepeat = false;
+    private JCheckBoxMenuItem repeatItem;
 
 
 
@@ -428,7 +428,7 @@ public class Window
         JMenuItem increaseVolumeItem = new JMenuItem("Increase Volume");
         JMenuItem decreaseVolumeItem = new JMenuItem("Decrease Volume");
         shuffleItem = new JCheckBoxMenuItem("Shuffle");
-        JCheckBoxMenuItem repeatItem = new JCheckBoxMenuItem("Repeat");
+        repeatItem = new JCheckBoxMenuItem("Repeat");
 
         // Build play recent menu
         updateRecentSongsMenu();
@@ -1210,36 +1210,42 @@ public class Window
     /**
      * Shuffle listener
      *
-     * Checks if player is !playing && shuffle is checked:
-     * if so, plays a random song
-     * if not, does nothing
+     * If shuffle has been checked: repeat is disabled
+     * If shuffle has been unchecked: repeat is enabled
      *
-     * Notes:
-     * - if shuffle is checked while a song is playing the next song will be random
-     * - if shuffle is unchecked while a song is playing the next song is the song following current song
+     * If shuffle has been checked && player is not playing:
+     *      playSong() is called which will pay a random song since shuffle is enabled
      *
      */
     class ShuffleListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            if(playerState != BasicPlayerEvent.PLAYING && shuffleItem.isSelected()){
-                // player was not playing - thus, play random song
-                // (value passed to playSong does not matter as a random song will be selected)
-                playSong(0);
+            if(shuffleItem.isSelected()){
+                repeatItem.setEnabled(false);
+                if(playerState != BasicPlayerEvent.PLAYING) {
+                    // player was not playing - thus, play random song
+                    // (value passed to playSong does not matter as a random song will be selected)
+                    playSong(0);
+                }
             } else {
-                // do nothing
+                repeatItem.setEnabled(true);
             }
         }
     }
 
+    /**
+     * Repeat listener
+     *
+     * If repeat has been checked: shuffle is disabled
+     * If repeat has been unchecked: shuffle is enabled
+     *
+     */
     class RepeatListener implements ActionListener {
-        public void actionPerformed(ActionEvent evt) {
-            AbstractButton repeatButton = (AbstractButton) evt.getSource();
-            boolean selected = repeatButton.getModel().isSelected();
-
-            if (selected)
-                onRepeat = true;
-            else
-                onRepeat = false;
+        public void actionPerformed(ActionEvent e) {
+            if(repeatItem.isSelected()){
+                shuffleItem.setEnabled(false);
+            } else {
+                shuffleItem.setEnabled(true);
+            }
         }
     }
 
@@ -1470,13 +1476,9 @@ public class Window
         }
 
         if(playerState == BasicPlayerEvent.STOPPED && songCompleted) {
-            if (!onRepeat) {
-                NextListener nextListener = new NextListener();
-                nextListener.actionPerformed(null);
-                songCompleted = false;
-            }
-            else
-                playSong(player.getLoadedSongRow());
+            NextListener nextListener = new NextListener();
+            nextListener.actionPerformed(null);
+            songCompleted = false;
         }
     }
 
@@ -1572,8 +1574,9 @@ public class Window
         if (shuffleItem.isSelected()) {
             Random r = new Random();
             row = r.nextInt(musicTable.getTable().getRowCount());
+        } else if(repeatItem.isSelected()) {
+            row = player.getLoadedSongRow();
         }
-
 
         clearProgressBar();
         int songId = Integer.parseInt(musicTable.getTable().getValueAt(row, MusicTable.COL_ID).toString());
